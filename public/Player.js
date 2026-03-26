@@ -12,9 +12,15 @@ class Player {
     this.seatPos = idx;      // integer
     this.name = name;        // string
     this.class = charClass;  // integer - used as a deck index
+    this.campCounter = 0;
+    this.dice = [];
+
+    for (let i = 0; i < 3; i++) {
+      this.dice[i] = new Dice(m_dieSizes[this.class], 1150+m_dieSize*i, 35+225*this.seatPos, m_dieColors[this.class]);
+    }
   }  // xtor
 
-  show() {
+  showNoDice() {
     // underlying rect
     fill(0, 100, 50); noStroke();
     rect(1055, 225*this.seatPos, width-1055, 75);
@@ -25,6 +31,12 @@ class Player {
     text(m_classNames[this.class], 1055, 50 + 225*this.seatPos)
     text(m_classCamp[this.class], 1150, 25 + 225*this.seatPos)
 
+    // camp counter
+    fill(255);
+    circle(width-50, 225*this.seatPos + 75/2, 30);
+    fill(0);
+    text(this.campCounter, width-50-5, 225*this.seatPos + 75/2 + 5 );
+
     // deck
     let deck = m_decks[this.class];
     let xstart = 1055;
@@ -32,14 +44,18 @@ class Player {
     let xmult = 1;  // 1 card width
     deck.show(xstart, ystart, xmult, 0);
 
-    // let x = 1055;
-    // let y = 0 + 225*this.class + m_ch/2;
-    // for (let i = 0; i < deck.cards.length; i++) {
-    //   deck.cards[i].x = x + i*m_cw;
-    //   deck.cards[i].y = y;
-    //   deck.cards[i].facedown = false;  // player cards are always faceup
-    //   deck.cards[i].show();
-    // }
+  }
+
+  showDice() {
+    for (let die = 0; die < this.dice.length; die++) {
+      // if we have a dragged die, and it's this one, change the position before drawing.
+      // This only changes this player's info, it does not update. 
+      if (Object.keys(m_selectedDieInfo).length != 0 && m_selectedDieInfo.playerNum == this.seatPos && m_selectedDieInfo.dieIndex == die) {
+        m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].x = m_selectedDieInfo.x;
+        m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].y = m_selectedDieInfo.y;
+      }
+      this.dice[die].show(this.seatPos, die);
+    }
   }
 
   // data: a Player object
@@ -48,22 +64,20 @@ class Player {
     this.seatPos = data.seatPos;
     this.name = data.name;
     this.class = data.class;
+    this.campCounter = data.campCounter;
 
-    // this.cards = [];
-    // if (data.cards) {
-    //   for (let c of data.cards) {
-    //     let card = new Card();
-    //     card.copyFromServerData(c);
-    //     this.cards.push(card);
-    //   }
-    // } else {
-    //   this.cards = [];
-    // }
-    // this.selected = data.selected;
-    // this.dealer = data.dealer;
-    // this.folded = data.folded;
-    // this.bet = data.bet;
-    // this.money = data.money
+    // We have to pass extra data into die.copyFromServerData() because we lose the positions
+    // of our dice when they are recalculated the first time we get server data and our seatPos is -1.
+    // Passing the seatPos allows us to calculate the y properly (assuming it is incorrect)
+    this.dice = [];
+    if (data.dice) {
+      for (let d of data.dice) {
+        let die = new Dice();
+        die.copyFromServerData(d, this.seatPos);
+        this.dice.push(die);
+      }
+    } 
+
   }  // copyFromServerData
 
 }  // class Player

@@ -1,12 +1,12 @@
 const CLASS_NONE = -1, CLASS_BEASTMASTER = 0, CLASS_CLERIC = 1, CLASS_RANGER = 2, CLASS_ROGUE = 3, CLASS_WARRIOR = 4, CLASS_WIZARD = 5; CLASS_NUM_CLASSES = 6;
 const m_classNames = ['Beast Master', 'Cleric', 'Ranger', 'Rogue', 'Warrior', 'Wizard'];
-// const m_classCamp = ["SET TRAP: As soon as a Craeture in the 1stposition of the Line is revealed during the Watch phase, you may assign this result to that Creature as direct damage.  If this defeats the Creature, its ability is not triggered",
-//                      "HEAL: Choose an Adventurer: refresh 1 of their Ability cards. (Requirement: 4+)",
-//                      "ELVEN SCOUT: Draw the top 4 cards of the Creature deck, look an them, and return them to the top of the Creature dek in any order",
-//                      "PREPARED: Perform the Equip action.  You may then choose an Adventurer on Watch to perform than Equip action",
-//                      "WOOD AXE: Advance the Firewood token by +4",
-//                      "TELEPORT: Draw the top 4 cards of the Unused Locations deck, look at them, and then choose one of them to swap with the top card of the Map deck.  Return the remainin cards to the bottom of the Unused Locations dek in any order" 
-//                     ];
+const m_classCampFull = ["SET TRAP: As soon as a Creature in the 1st position of the Line is revealed during the Watch phase, you may assign this result to that Creature as direct damage.  If this defeats the Creature, its ability is not triggered",
+                     "HEAL: Choose an Adventurer: refresh 1 of their Ability cards. (Requirement: 4+)",
+                     "ELVEN SCOUT: Draw the top 4 cards of the Creature deck, look an them, and return them to the top of the Creature dek in any order",
+                     "PREPARED: Perform the Equip action.  You may then choose an Adventurer on Watch to perform than Equip action",
+                     "WOOD AXE: Advance the Firewood token by +4",
+                     "TELEPORT: Draw the top 4 cards of the Unused Locations deck, look at them, and then choose one of them to swap with the top card of the Map deck.  Return the remainin cards to the bottom of the Unused Locations dek in any order" 
+                    ];
 const m_classCamp = ["SET TRAP: look it up!!",
                      "HEAL: Refresh 1 Ability of an Adventurer. (Requirement: 4+)",
                      "ELVEN SCOUT: Rearrage top 4 cards of Creature deck",
@@ -22,6 +22,8 @@ var m_playersTemp = [];
 var m_initialized = false;
 var m_mySocketId;
 var m_classRadio;
+var m_playerClassNameParagraph;
+// var m_playerClassNameParagraphs = [];
 var m_cw = 109, m_ch = 150;  // for vertical cards
 var m_bw = 100, m_bh = 75;   // for buttons
 var m_bs = 30;               // width height for buttons on cards
@@ -42,6 +44,12 @@ const NUM_LOC_REGULAR = 15, NUM_LOC_FINAL = 1, NUM_LOC_RESPITE = 4;
 const NUM_CARDS_PER_CLASS = 5;
 var m_debugSet=-1, m_debugDeck=-1;
 let m_spreadingToppingOrBottoming = false;  // when we click these buttons on a deck we don't want to select the card
+const m_dieSizes = [8, 6, 8, 6, 8, 6];      // beats master thru wizard
+const m_dieColors = ['blue', 'red', 'green', 'orange', 'purple', 'yellow'];
+const m_dieSize = 40;
+let m_selectedDieInfo = {};
+let m_didDragDie = false;
+let m_firewood = 7;
 
     
 // Decks are separate collections of cards on the table during play.  Each Deck is associated with one Set and many decks can use
@@ -57,9 +65,11 @@ const BACK_CREATURE = 0, BACK_LOCATION = 1, BACK_GENERIC = 2;
 function preload() {
   m_campImage = loadImage('Assets/GameBoardCamp.jpg');
   let img = loadImage('Assets/cardBackTemp.jpg');
-  m_cardBackImages[BACK_CREATURE] = img;
-  m_cardBackImages[BACK_LOCATION] = img;
   m_cardBackImages[BACK_GENERIC] = img;
+  img = loadImage('Assets/cardBackCreature.jpg');
+  m_cardBackImages[BACK_CREATURE] = img;
+  img = loadImage('Assets/cardBackLocation.jpg');
+  m_cardBackImages[BACK_LOCATION] = img;
   for (let i = 0; i < SET_NUM_SETS; i++) m_setImages[i] = [];
 
   // Creatures
@@ -85,6 +95,21 @@ function preload() {
 
 function setup() {
   createCanvas(1600, 900);
+
+  m_playerClassNameParagraph = createP();
+  m_playerClassNameParagraph.position(400, 400);
+  m_playerClassNameParagraph.size(800, 200);
+  m_playerClassNameParagraph.style('background-color', "grey");
+  m_playerClassNameParagraph.hide();
+
+    
+  // /////////////////////////////////////////////
+  // // For already created players
+  // for (let i = 0; i < 6; i++) {
+  //   m_playerClassNameParagraphs[i] = createP();
+  //   m_playerClassNameParagraphs[i].position(1055, i*255+50);
+  // }
+
   /////////////////////////////////////////////
   // Cards, Sets and Decks
   /////////////////////////////////////////////
@@ -196,6 +221,8 @@ function setup() {
   m_decks[DECK_MAP_LOCS] = new Deck(DECK_MAP_LOCS, SET_LOCATIONS, BACK_LOCATION, m_ch, m_cw);
   m_decks[DECK_UNUSED_LOCS] = new Deck(DECK_UNUSED_LOCS, SET_LOCATIONS, BACK_LOCATION, m_ch, m_cw);
   m_decks[DECK_CUR_LOCS] = new Deck(DECK_CUR_LOCS, SET_LOCATIONS, BACK_LOCATION, m_ch, m_cw);
+  m_decks[DECK_TEMP_LOCS] = new Deck(DECK_TEMP_LOCS, SET_LOCATIONS, BACK_LOCATION, m_ch, m_cw);
+  m_decks[DECK_TEMP_LOCS].isSpread = true;
 
   /////////////////////////////////////////////
   // Create and add Cards to our Location Decks and then shuffle the decks.
@@ -242,16 +269,17 @@ function setup() {
 
   //////////////////////////////////////////////
   // Permanent buttons on top of canvas
+  //////////////////////////////////////////////
   m_messageP = createDiv('Message here');
 
   ///////////////////////////////////////////////
   // Controls on Canvas
-  let buttonFlip = createNormalButton("Flip Card(s)", 0*m_bw, 750, m_bw, m_bh);
+  let buttonFlip = createNormalButton("Flip Cards", 0*m_bw, 750, m_bw, m_bh);
   buttonFlip.style('font-size', '16px');
   buttonFlip.style('background-color', "#F0F0F0")
   buttonFlip.mousePressed(flipCards);
 
-  let buttonExhaust = createNormalButton("(Un)Exhaust Card(s)", 1*m_bw, 750, m_bw, m_bh);
+  let buttonExhaust = createNormalButton("(Un)Exhaust Cards", 1*m_bw, 750, m_bw, m_bh);
   buttonExhaust.style('font-size', '16px');
   buttonExhaust.style('background-color', "#F0F0F0")
   buttonExhaust.mousePressed(exhaustToggleCards);
@@ -265,6 +293,64 @@ function setup() {
   m_buttonSwapTwoCards.style('font-size', '16px');
   m_buttonSwapTwoCards.style('background-color', "#F0F0F0")
   m_buttonSwapTwoCards.mousePressed(swapTwoCards);
+
+  let buttonShuffle = createNormalButton("Shuffle Deck of Selected Card", 4*m_bw, 750, m_bw, m_bh);
+  buttonShuffle.style('font-size', '16px');
+  buttonShuffle.style('background-color', "#F0F0F0")
+  buttonShuffle.mousePressed(shuffleDeckOfSelectedCard);
+
+  let buttonRemove = createNormalButton("Remove Selected Card from Game", 5*m_bw, 750, m_bw, m_bh);
+  buttonRemove.style('font-size', '16px');
+  buttonRemove.style('background-color', "#F0F0F0")
+  buttonRemove.mousePressed(removeSelectedCardFromGame);
+
+  let buttonRollAllDice = createNormalButton("Roll All Dice", 0*m_bw, 825, m_bw, m_bh);
+  buttonRollAllDice.style('font-size', '16px');
+  buttonRollAllDice.style('background-color', "#F0F0F0")
+  buttonRollAllDice.mousePressed(rollAllDice);
+
+  let buttonRollSelectedDice = createNormalButton("Roll My Selected Dice", 1*m_bw, 825, m_bw, m_bh);
+  buttonRollSelectedDice.style('font-size', '16px');
+  buttonRollSelectedDice.style('background-color', "#F0F0F0")
+  buttonRollSelectedDice.mousePressed(rollMySelectedDice);
+
+  let buttonDecrementSelectedDice = createNormalButton("Decrement My Selected Dice", 2*m_bw, 825, m_bw, m_bh);
+  buttonDecrementSelectedDice.style('font-size', '16px');
+  buttonDecrementSelectedDice.style('background-color', "#F0F0F0")
+  buttonDecrementSelectedDice.mousePressed(decrementMySelectedDice);
+
+  let buttonIncrementSelectedDice = createNormalButton("Increment My Selected Dice", 3*m_bw, 825, m_bw, m_bh);
+  buttonIncrementSelectedDice.style('font-size', '16px');
+  buttonIncrementSelectedDice.style('background-color', "#F0F0F0")
+  buttonIncrementSelectedDice.mousePressed(incrementMySelectedDice);
+
+  let buttonDecrementFirewood = createNormalButton("Decrease Firewood", 4*m_bw, 825, m_bw, m_bh);
+  buttonDecrementFirewood.style('font-size', '16px');
+  buttonDecrementFirewood.style('background-color', "#F0F0F0")
+  buttonDecrementFirewood.mousePressed(function(){
+      if (m_firewood > 0) m_firewood --;
+      update();
+    });
+
+  let buttonIncrementFirewood = createNormalButton("Increase Firewood", 5*m_bw, 825, m_bw, m_bh);
+  buttonIncrementFirewood.style('font-size', '16px');
+  buttonIncrementFirewood.style('background-color', "#F0F0F0")
+  buttonIncrementFirewood.mousePressed(function(){
+      if (m_firewood < 15) m_firewood ++;
+      update();
+    });
+
+  let buttonCampCheckMap = createNormalButton("Camp Check Map", 8*m_bw, 750, m_bw, m_bh);
+  buttonCampCheckMap.style('font-size', '16px');
+  buttonCampCheckMap.style('background-color', "#F0F0F0")
+  buttonCampCheckMap.mousePressed(campCheckMap);
+
+  let buttonCampTeleport = createNormalButton("Camp Wizard Teleport", 8*m_bw, 825, m_bw, m_bh);
+  buttonCampTeleport.style('font-size', '16px');
+  buttonCampTeleport.style('background-color', "#F0F0F0")
+  buttonCampTeleport.mousePressed(campWizardTeleport);
+
+
 
   ///////////////////////////////////////////////
   // Controls for individual decks
@@ -288,20 +374,36 @@ function setup() {
   doDeal = true, doSpread = true, doTop=true, doBottom=true;
   createDeckButtons(DECK_MAP_LOCS, DECK_CUR_LOCS, m_decks[DECK_MAP_LOCS].cw, 0, m_decks[DECK_MAP_LOCS].cw, m_decks[DECK_MAP_LOCS].ch, 
                     doDeal, doSpread, doTop, doBottom);
+  doDeal = false, doSpread = false, doTop=true, doBottom=true;
+  createDeckButtons(DECK_GENERIC, DECK_CUR_LOCS, 946, 0, m_decks[DECK_GENERIC].cw, m_decks[DECK_GENERIC].ch, 
+                    doDeal, doSpread, doTop, doBottom);
+
+  //////////////////////////////////////////
+  // Camp Counter buttons
+  for (let i = 0; i < 4; i++) {
+    let b3 = createNormalButton('⬆', width-m_bs, 225*i + 10, m_bs, m_bs);
+    b3.mousePressed(function() {
+      if (m_players[i].campCounter < 2) m_players[i].campCounter++;
+    });
+    let b4 = createNormalButton('⬇', width-m_bs, 225*i + 40, m_bs, m_bs);
+    b4.mousePressed(function() {
+      if (m_players[i].campCounter > 0) m_players[i].campCounter--;
+    });
+  }
 
   ///////////////////////////////////////////////
   // Test
-  m_buttonTest = createNormalButton('Shuffle Player 1', 7*m_bw, 825, m_bw, m_bh);
-  m_buttonTest.mousePressed(function(){
-    m_decks[DECK_BEASTMASTER].shuffle();
-    update();
-  });
-  let b2 = createNormalButton('Shuffle Player 2', 8*m_bw, 825, m_bw, m_bh);
-  b2.mousePressed(function(){
-    m_decks[DECK_CLERIC].shuffle();
-    update();
-  });
-  // let b3 = createNormalButton('⬆', 0, m_cw, m_bs, m_bs);
+  // m_buttonTest = createNormalButton('Shuffle Player 1', 7*m_bw, 825, m_bw, m_bh);
+  // m_buttonTest.mousePressed(function(){
+  //   m_decks[DECK_BEASTMASTER].shuffle();
+  //   update();
+  // });
+  // let b2 = createNormalButton('Shuffle Player 2', 8*m_bw, 825, m_bw, m_bh);
+  // b2.mousePressed(function(){
+  //   m_decks[DECK_CLERIC].shuffle();
+  //   update();
+  // });
+  // // let b3 = createNormalButton('⬆', 0, m_cw, m_bs, m_bs);
   // let b4 = createNormalButton('top', 200, m_cw, m_bs, m_bs);
 
   /////////////////////////////////////////////
@@ -327,6 +429,7 @@ function setup() {
       m_initButton.hide();
       m_nameInputButton.hide();
       m_classRadio.hide();
+      // m_playerClassNameParagraphs[m_initialPlayer.class].html(m_classNames[m_initialPlayer.class]);
     } else {
       console.log('initPlayer message: This message intended for another player');
     }
@@ -341,6 +444,7 @@ function setup() {
     createPlayersFromServerData(data.players);
     createDecksFromServerData(data.decks);
     setMessageFromServerData(data.message);
+    m_firewood = data.firewood;
     // // Note I wasn't able to pass in m_discards into the function here and fill it in 
     // // using the function argument.  I had to directly specify m_discards in the function.
     // // This is probably because I keep changing what m_discards is.
@@ -414,10 +518,10 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
       for (let card of cards) {
         // remove from old deck (remove before adding, because adding changes the deckIndex)
         let idx = m_decks[card.deckIndex].findIndexInDeck(card)
-        let card2 = m_decks[card.deckIndex].cards.splice(idx, 1);
+        let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
         // add to new deck
-        card2[0].facedown = true;
-        m_decks[deckIndex].addCard(card2[0]);
+        cards2[0].facedown = true;
+        m_decks[deckIndex].addCard(cards2[0]);
         m_spreadingToppingOrBottoming = true;
         unselectAll();
       }
@@ -434,10 +538,10 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
       for (let card of cards) {
         // remove from old deck (remove before adding, because adding changes the deckIndex)
         let idx = m_decks[card.deckIndex].findIndexInDeck(card)
-        let card2 = m_decks[card.deckIndex].cards.splice(idx, 1);
+        let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
         // add to new deck
-        card2[0].facedown = true;
-        m_decks[deckIndex].addCardToBottom(card2[0]);
+        cards2[0].facedown = true;
+        m_decks[deckIndex].addCardToBottom(cards2[0]);
         unselectAll();
         m_spreadingToppingOrBottoming = true;
       }
@@ -474,6 +578,7 @@ function update() {
       players: m_players,
       decks: m_decks,
       message: msg,
+      firewood: m_firewood,
     };
     m_socket.emit('update', data);
   }
@@ -569,7 +674,40 @@ function mousePressed() {
   // Don't pay attention to presses in the control area
   if (mouseX > 0 && mouseX < m_cw*8 && mouseY > 750) return;
 
-  // If spreading, topping or bottoming we don't want to select a card
+  ////////////////////////////////////////
+  // Dice
+  let foundDie = false;
+  for (let p = 0; p < m_players.length; p++) {
+    for (let d = 0; d < m_players[p].dice.length; d++) {
+      let die = m_players[p].dice[d];
+      if (mouseX > die.x && mouseX < die.x + m_dieSize && mouseY > die.y && mouseY < die.y + m_dieSize) {
+        foundDie = true;
+        m_players[p].dice[d].selected = !m_players[p].dice[d].selected;
+        if (m_players[p].dice[d].selected) {
+          // m_selectedDieInfo = { playerNum: p, dieIndex:d, x:mouseX, y:mouseY };
+          m_selectedDieInfo = { playerNum: p, dieIndex:d, x:m_players[p].dice[d].x, y:m_players[p].dice[d].y };
+          console.log('m_selectedDieInfo = ' , m_selectedDieInfo);
+          
+        }
+        // // if we have a
+        // if (Object.keys(m_selectedDieInfo).length != 0) m_selectedDieInfo = { player: p, dice:d };
+        // else                                        m_selectedDieInfo = {};
+      }
+    }
+  }
+  // return if we selected a dice
+  // if (Object.keys(m_selectedDieInfo).length != 0) return;
+  if (foundDie) {
+    update();
+    return;
+  } else {
+    unselectAllMyDice();
+  }
+
+  ////////////////////////////////////////
+  // Cards
+
+  // If spreading, topping or bottoming we don't want to select the top card of the deck we just clicked on
   if (m_spreadingToppingOrBottoming) {
     m_spreadingToppingOrBottoming = false;
     return;
@@ -595,7 +733,57 @@ function mousePressed() {
   if (!foundCard) {
     foundCard = unselectAll();
   }
-  if (foundCard) update();
+  if (foundCard || !foundDie) update();
+}
+
+function mouseDragged() {
+  // console.log('mouseDragged');
+  // If a die is selected
+  if (Object.keys(m_selectedDieInfo).length != 0) {
+    m_selectedDieInfo.x = mouseX;
+    m_selectedDieInfo.y = mouseY;
+    m_didDragDie = true;
+  }
+
+  // if (m_lastSelectedTableCardIndex != -1) {
+  //   m_lastSelectedTableCardPos[0] = mouseX;
+  //   m_lastSelectedTableCardPos[1] = mouseY;
+  //   m_didDragTableCard = true;
+  // }
+}
+
+function mouseReleased() {
+  console.log('mouseReleased');
+  // If we didn't drag the card at all, we just want to select it, so 
+  // nothing more needs to be done.
+  if (!m_didDragDie) {
+    m_selectedDieInfo = {};
+    return;
+  }
+
+  // If we had a selected die
+  if (Object.keys(m_selectedDieInfo).length != 0) {
+    // Assign the position of the die and update everyone
+    console.log('mouseReleased m_selectedDieInfo = ' , m_selectedDieInfo);
+    let x = m_selectedDieInfo.x;
+    let y = m_selectedDieInfo.y;
+    if (x > 0 && x < m_cw*8 && y > 750-m_dieSize) y = 750-m_dieSize;
+    // m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].x = m_selectedDieInfo.x;
+    // m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].y = m_selectedDieInfo.y;
+    m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].x = x;
+    m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].y = y;
+    m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].selected = false;
+    m_selectedDieInfo = {};
+    m_didDragDie = false;
+    update();
+  }
+
+}
+
+function unselectAllMyDice() {
+  // for (d of m_thisPlayer.dice) d.selected = false;
+  for (d of m_players[m_thisPlayer.seatPos].dice) d.selected = false;
+
 }
 
 // Unselect all cards and return boolean if any cards were selected
@@ -700,6 +888,96 @@ function swapTwoCards() {
 
 }
 
+function shuffleDeckOfSelectedCard() {
+  let cards = findSelectedCards();
+  if (cards.length != 1) {
+    m_messageP.html('You must have exactly 1 card selected');
+    update();
+    return;
+  }
+
+  cards[0].selected = false;
+  m_decks[cards[0].deckIndex].shuffle();
+  update();
+
+}
+
+function removeSelectedCardFromGame() {
+  let cards = findSelectedCards();
+  if (cards.length == 0) {
+    m_messageP.html('You must selected at least 1 card');
+    update();
+    return;
+  }
+  for (let card of cards) {
+    card.selected = false;
+    let idx = m_decks[card.deckIndex].findIndexInDeck(card)
+    let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
+    cards2[0].selected = false;  // this is redundant
+    m_decks[DECK_REMOVED_FROM_GAME].addCard(cards2[0]);
+  }
+  update();
+}
+
+function rollAllDice() {
+  for (let p of m_players) {
+    for (let d = 0; d < p.dice.length; d++) {
+      let die = p.dice[d];
+      die.curValue = floor(random(die.maxValue)) + 1;
+      die.x = 1150+m_dieSize*d;
+      die.y = 35+225*p.seatPos
+      die.selected = false;
+    }
+  }
+  update();
+}
+
+function rollMySelectedDice() {
+  let p = m_thisPlayer.seatPos;
+  for (let d = 0; d < m_players[p].dice.length; d++) {
+    let die = m_players[p].dice[d];
+    if (die.selected) {
+      die.curValue = floor(random(die.maxValue)) + 1;
+      die.selected = false;
+    }
+  }
+  update();
+}
+function incrementMySelectedDice() {
+  let p = m_thisPlayer.seatPos;
+  for (let d = 0; d < m_players[p].dice.length; d++) {
+    let die = m_players[p].dice[d];
+    if (die.selected) {
+      die.curValue += 1;
+      if (die.curValue > die.maxValue) die.curValue = 1;
+    }
+  }
+  update();
+}
+function decrementMySelectedDice() {
+  let p = m_thisPlayer.seatPos;
+  for (let d = 0; d < m_players[p].dice.length; d++) {
+    let die = m_players[p].dice[d];
+    if (die.selected) {
+      die.curValue -= 1;
+      if (die.curValue <= 0) die.curValue = die.maxValue;
+    }
+  }
+  update();
+}
+
+function campCheckMap() {
+  // Add the top card from both Unused Locations and Locations to the Temporary Locations
+  m_decks[DECK_UNUSED_LOCS].moveTopCardToDeck(DECK_TEMP_LOCS);
+  m_decks[DECK_MAP_LOCS].moveTopCardToDeck(DECK_TEMP_LOCS);
+  // for (card of m_decks[DECK_MAP_LOCS].cards) card.facedown = false;
+}
+
+function campWizardTeleport() {
+  // Add the top 4 cards of Unseen Locations to the Temporary Location
+  for (let i = 0; i < 4; i++) m_decks[DECK_UNUSED_LOCS].moveTopCardToDeck(DECK_TEMP_LOCS);
+}
+
 ////////////////////////////////////////////
 // DRAW FUNCTIONS
 ////////////////////////////////////////////
@@ -730,6 +1008,7 @@ function draw() {
 
   // check for cursor over a card
   checkCardHover();
+  checkCampAbilityHover();
 }  // draw()
 
 // Setting m_debugSet to soemthing other than -1 causes this function to be called in draw();
@@ -769,7 +1048,7 @@ function drawBoard() {
 
   ////////////////////////////
   // Players - must be drawn before decks in case any of them are 'spread'
-  for (player of m_players) player.show();
+  for (player of m_players) player.showNoDice();
 
   // locations
   m_decks[DECK_UNUSED_LOCS].show(0, 0, 0, 0);
@@ -777,11 +1056,11 @@ function drawBoard() {
   m_decks[DECK_CUR_LOCS].show(2*m_ch, 0, 0, 0);
   stroke(0); noFill(); strokeWeight(1);
   rect(0, 0, m_ch, m_cw);
-  text('Unused : ' + m_decks[DECK_UNUSED_LOCS].cards.length, 0, m_cw/2);
+  text('UNUSED: ' + m_decks[DECK_UNUSED_LOCS].cards.length, 0, m_cw/2);
   rect(0, 0, m_ch, m_cw);
-  text('Locations: ' + m_decks[DECK_MAP_LOCS].cards.length, m_ch, m_cw/2);
+  text('   MAP: ' + m_decks[DECK_MAP_LOCS].cards.length, m_ch, m_cw/2);
   rect(0, 0, m_ch, m_cw);
-  text('Current: ' + m_decks[DECK_CUR_LOCS].cards.length, 2*m_ch, m_cw/2);
+  text('CURRENT: ' + m_decks[DECK_CUR_LOCS].cards.length, 2*m_ch, m_cw/2);
 
   // JMU this should be put in a function can then called once per deck
   // Hoard
@@ -820,20 +1099,23 @@ function drawBoard() {
   // if (m_players.length > 1) m_players[1].show();
 
   // generic player cards 1
-  stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("GENERAL "+m_decks[DECK_GENERIC].cards.length, width-((5+1)*m_cw), m_ch/2)
   stroke(0); noFill(); strokeWeight(1);
   for (let i = 0; i < 6; i++) rect(width-((5+1)*m_cw), i*m_ch, m_cw, m_ch);
+  m_decks[DECK_GENERIC].show(946, 0, 0, m_ch);
+  stroke(0); fill(0); strokeWeight(1); textSize(16);
+  text("GENERAL "+m_decks[DECK_GENERIC].cards.length, width-((5+1)*m_cw), m_ch/2)
 
   // The Line
+  noFill();
   for (let i = 0; i < 8; i++) {
     rect(0+i*m_cw, 450, m_cw, m_ch);
     rect(0+i*m_cw, 450+m_ch, m_cw, m_ch);
   }
+  stroke(0); fill(0); strokeWeight(1); textSize(16);
+  text("LINE", 0, 450+m_ch/2)
   stroke(0); noFill(); strokeWeight(1);
   rect(700+m_cw, m_ch, m_cw, m_ch);
   m_decks[DECK_LINE].show(0, 450, 1, 0, 8);
-
 
   // the buttons on the bottom
   stroke(0); noFill(); strokeWeight(1);
@@ -841,6 +1123,24 @@ function drawBoard() {
     rect(0+i*m_bw, 750, m_bw, m_bh);
     rect(0+i*m_bw, 750+m_bh, m_bw, m_bh);
   }
+
+  // fire indicator
+  let fireX = 687/2;
+  let fireY = 109 + (341/2);
+  let numReveal = 0;
+  if (m_firewood < 7) numReveal = 1;
+  else if (m_firewood < 12) numReveal = 2;
+  else numReveal = 3;
+  stroke(255, 0, 0); fill(255, 0, 0); strokeWeight(1); textSize(32);
+  text(m_firewood + '(' + numReveal + ')', fireX-25, fireY);
+
+  // If there is anything in the temporary location deck, draw it
+  if (m_decks[DECK_TEMP_LOCS].cards.length > 0) m_decks[DECK_TEMP_LOCS].show();
+
+  // Players Dice -  must be drawn last so they are clickable
+  stroke(0); noFill(); strokeWeight(1);
+  for (player of m_players) player.showDice();
+
 
 }  // drawBoard()
 
@@ -860,3 +1160,28 @@ function checkCardHover() {
   }
 
 }  // checkCardHover()
+
+function checkCampAbilityHover() {
+  let ability = -1;
+  for (let i = 0; i < m_players.length; i++) {
+    let minX = 1150,       maxX = minX+100;
+    let minY = 5 + 225*i, maxY = minY + 25
+    if (mouseX >= minX && mouseX <= maxX && mouseY >= minY && mouseY <= maxY)  ability = i;
+  }
+
+  // if (ability > -1) {
+  //   fill(100); stroke(0); strokeWeight(1);
+  //   rect(450, 400, 700, 200);
+  //   stroke(0); noFill(); textSize(16);
+  //   text(m_classCampFull, 460, 410);
+  // }
+
+  if (ability > -1) {
+    let abilityIdx = m_players[ability].class;
+    m_playerClassNameParagraph.html(m_classCampFull[abilityIdx]);
+    m_playerClassNameParagraph.show();
+  } else {
+    m_playerClassNameParagraph.hide();
+    m_playerClassNameParagraph.html("");
+  }
+}

@@ -62,7 +62,13 @@ class Deck {
 
   // otherDeck: index of a Deck object
   moveTopCardToDeck(otherDeckIndex) {
+    console.log("this.moveTopCardToDeck");
     let otherDeck = m_decks[otherDeckIndex];
+    console.log('otherDeck.setIndex, this.setIndex = ' , otherDeck.setIndex, this.setIndex);
+    
+    if (otherDeck.setIndex != this.setIndex) {
+      return;
+    }
     let card = this.dealCard();
     if (card) {
       card.deckIndex = otherDeck.deckIndex;
@@ -114,7 +120,8 @@ class Deck {
       //     this.deckIndex == DECK_MAP_LOCS) {
       //   this.cards[i].facedown = true;
       // } else 
-      // Only force cards faceup in these decks.  Forcing facedown could be awkward
+      // Only force cards faceup in these decks.  Forcing facedown could be awkward.  But if we don't force selected cards facedown,
+      // it might work
       if (this.deckIndex == DECK_UNHALLOWED || this.deckIndex == DECK_GRAVEYARD || this.deckIndex == DECK_CUR_LOCS) {
         this.cards[i].facedown = false;
       }

@@ -40,17 +40,6 @@ class Card {
       strokeWeight(1);
     }
 
-    // if (this.selected) {
-    //   stroke(255, 0, 0);
-    //   strokeWeight(4);
-    //   noFill();
-    //   if (!this.facedown && this.wasEverFacedown) {
-    //     rect(this.x-1, this.y-6, CARD_WIDTH+2, CARD_HEIGHT+2);
-    //   } else {
-    //     rect(this.x-1, this.y-1, CARD_WIDTH+2, CARD_HEIGHT+2);
-    //   }
-    // }
-
   }
 
   setFacedown() {
