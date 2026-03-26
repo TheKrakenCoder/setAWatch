@@ -17,6 +17,7 @@ let m_seatOrder = [0, 1, 2, 3];
 let m_players = [];
 let m_decks = [];
 let m_message = "&nbsp";
+let m_firewood = 7;
 
 // // Using express: http://expressjs.com/
 // var express = require('express');
@@ -70,6 +71,7 @@ function heartbeat() {
     players: m_players,
     decks:   m_decks,
     message: m_message,
+    firewood: m_firewood,
   };
   // emit to all players
   io.sockets.emit('heartbeat', data);
@@ -122,6 +124,7 @@ io.on(
       m_players = data.players;
       m_decks   = data.decks;
       m_message = data.message;
+      m_firewood = data.firewood;
       heartbeat();
     });
 
@@ -143,6 +146,7 @@ io.on(
       if (m_players.length == 0) {
         if (m_decks)  m_decks = [];
         if (m_message) m_message = "&nbsp";
+        if (m_firewood) m_firewood = 7;
       }
     });
   }
