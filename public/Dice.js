@@ -29,7 +29,7 @@ class Dice {
     // }
     if (this.selected) {
       fill(0, 255, 0);
-      circle(this.x, this.y, 12);
+      circle(this.x+5, this.y+5, 12);
     }
   }
 

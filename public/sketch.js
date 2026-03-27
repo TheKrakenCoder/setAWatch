@@ -19,6 +19,7 @@ var m_socket;
 var m_initButton, m_nameInputButton, m_initialPlayer;
 var m_players = [];  
 var m_playersTemp = [];
+// var m_thisPlayer;
 var m_initialized = false;
 var m_difficulty = 2;
 var m_mySocketId;
@@ -51,6 +52,7 @@ const m_dieSize = 40;
 let m_selectedDieInfo = {};
 let m_didDragDie = false;
 let m_firewood = 7;
+let m_buttonOpenSeason, m_isOpenSeason = false;
 
     
 // Decks are separate collections of cards on the table during play.  Each Deck is associated with one Set and many decks can use
@@ -318,27 +320,32 @@ function setup() {
   buttonRemove.style('background-color', "#F0F0F0")
   buttonRemove.mousePressed(removeSelectedCardFromGame);
 
-  let buttonRollAllDice = createNormalButton("Roll All Dice", 0*m_bw, 825, m_bw, m_bh);
+  m_buttonOpenSeason = createNormalButton("Open Season", 0*m_bw, 825, m_bw, m_bh);
+  m_buttonOpenSeason.style('font-size', '16px');
+  m_buttonOpenSeason.style('background-color', "#FF0000")
+  m_buttonOpenSeason.mousePressed(toggleOpenSeason);
+
+  let buttonRollAllDice = createNormalButton("Roll All Dice", 1*m_bw, 825, m_bw, m_bh);
   buttonRollAllDice.style('font-size', '16px');
   buttonRollAllDice.style('background-color', "#F0F0F0")
   buttonRollAllDice.mousePressed(rollAllDice);
 
-  let buttonRollSelectedDice = createNormalButton("Roll My Selected Dice", 1*m_bw, 825, m_bw, m_bh);
+  let buttonRollSelectedDice = createNormalButton("Roll Selected Dice", 2*m_bw, 825, m_bw, m_bh);
   buttonRollSelectedDice.style('font-size', '16px');
   buttonRollSelectedDice.style('background-color', "#F0F0F0")
-  buttonRollSelectedDice.mousePressed(rollMySelectedDice);
+  buttonRollSelectedDice.mousePressed(rollSelectedDice);
 
-  let buttonDecrementSelectedDice = createNormalButton("Decrement My Selected Dice", 2*m_bw, 825, m_bw, m_bh);
+  let buttonDecrementSelectedDice = createNormalButton("Decrement Selected Dice", 3*m_bw, 825, m_bw, m_bh);
   buttonDecrementSelectedDice.style('font-size', '16px');
   buttonDecrementSelectedDice.style('background-color', "#F0F0F0")
-  buttonDecrementSelectedDice.mousePressed(decrementMySelectedDice);
+  buttonDecrementSelectedDice.mousePressed(decrementSelectedDice);
 
-  let buttonIncrementSelectedDice = createNormalButton("Increment My Selected Dice", 3*m_bw, 825, m_bw, m_bh);
+  let buttonIncrementSelectedDice = createNormalButton("Increment Selected Dice", 4*m_bw, 825, m_bw, m_bh);
   buttonIncrementSelectedDice.style('font-size', '16px');
   buttonIncrementSelectedDice.style('background-color', "#F0F0F0")
-  buttonIncrementSelectedDice.mousePressed(incrementMySelectedDice);
+  buttonIncrementSelectedDice.mousePressed(incrementSelectedDice);
 
-  let buttonDecrementFirewood = createNormalButton("Decrease Firewood", 4*m_bw, 825, m_bw, m_bh);
+  let buttonDecrementFirewood = createNormalButton("Decrease Firewood", 5*m_bw, 825, m_bw, m_bh);
   buttonDecrementFirewood.style('font-size', '16px');
   buttonDecrementFirewood.style('background-color', "#F0F0F0")
   buttonDecrementFirewood.mousePressed(function(){
@@ -346,7 +353,7 @@ function setup() {
       update();
     });
 
-  let buttonIncrementFirewood = createNormalButton("Increase Firewood", 5*m_bw, 825, m_bw, m_bh);
+  let buttonIncrementFirewood = createNormalButton("Increase Firewood", 6*m_bw, 825, m_bw, m_bh);
   buttonIncrementFirewood.style('font-size', '16px');
   buttonIncrementFirewood.style('background-color', "#F0F0F0")
   buttonIncrementFirewood.mousePressed(function(){
@@ -457,6 +464,7 @@ function setup() {
     createDecksFromServerData(data.decks);
     setMessageFromServerData(data.message);
     m_firewood = data.firewood;
+    m_isOpenSeason = data.isOpenSeason;
     // // Note I wasn't able to pass in m_discards into the function here and fill it in 
     // // using the function argument.  I had to directly specify m_discards in the function.
     // // This is probably because I keep changing what m_discards is.
@@ -599,6 +607,7 @@ function update() {
       decks: m_decks,
       message: msg,
       firewood: m_firewood,
+      isOpenSeason: m_isOpenSeason,
     };
     m_socket.emit('update', data);
   }
@@ -673,6 +682,7 @@ function createNormalButton(name, x, y, w, h) {
 
 // returns the Card if one is found
 function findCardUnderCursor() {
+
   let foundCard = null;
   let cw, ch;
   for (let d = 0; d < m_decks.length; d++) {
@@ -691,6 +701,7 @@ function findCardUnderCursor() {
 }
 
 function mousePressed() {
+  console.log('mousePressed');
   // Don't pay attention to presses in the control area
   if (mouseX > 0 && mouseX < m_cw*8 && mouseY > 750) return;
 
@@ -698,6 +709,8 @@ function mousePressed() {
   // Dice
   let foundDie = false;
   for (let p = 0; p < m_players.length; p++) {
+    // If openSeason is off, don't check other player's dice
+    if (!m_isOpenSeason && m_thisPlayer.seatPos != p) continue;
     for (let d = 0; d < m_players[p].dice.length; d++) {
       let die = m_players[p].dice[d];
       if (mouseX > die.x && mouseX < die.x + m_dieSize && mouseY > die.y && mouseY < die.y + m_dieSize) {
@@ -722,7 +735,7 @@ function mousePressed() {
     update();
     return;
   } else {
-    unselectAllMyDice();
+    unselectAllDice();
   }
 
   ////////////////////////////////////////
@@ -748,7 +761,14 @@ function mousePressed() {
   //     }
   //   }
   // }
+
+
+
   let foundCard = findCardUnderCursor();
+
+  // You can't select other plays cards unless it is open season
+  if (foundCard && !m_isOpenSeason && foundCard.deckIndex <= DECK_WIZARD && m_thisPlayer.class != foundCard.deckIndex) foundCard = null;
+
   if (foundCard) foundCard.selected = !foundCard.selected;
 
   if (!foundCard) {
@@ -801,9 +821,14 @@ function mouseReleased() {
 
 }
 
-function unselectAllMyDice() {
-  // for (d of m_thisPlayer.dice) d.selected = false;
-  for (d of m_players[m_thisPlayer.seatPos].dice) d.selected = false;
+function unselectAllDice() {
+  if (m_isOpenSeason) {
+    for (let i = 0; i < m_players.length; i++) {
+      for (d of m_players[i].dice) d.selected = false;
+    }
+  } else {
+    for (d of m_players[m_thisPlayer.seatPos].dice) d.selected = false;
+  }
 
 }
 
@@ -811,8 +836,8 @@ function unselectAllMyDice() {
 function unselectAll() {
   let foundSelectedCard = false;
   for (let d = 0; d < m_decks.length; d++) {
-    // you can't unselect other people's cards by clicking on tha table
-    if (m_thisPlayer.class == d || d > DECK_WIZARD) {
+    // you can't unselect other people's cards by clicking on the table, unless it's open season
+    if (m_thisPlayer.class == d || d > DECK_WIZARD || m_isOpenSeason) {
       for (let c = 0; c < m_decks[d].cards.length; c++) {
         if (m_decks[d].cards[c].selected) {
           m_decks[d].cards[c].selected=false;
@@ -940,6 +965,13 @@ function removeSelectedCardFromGame() {
   update();
 }
 
+function toggleOpenSeason() {
+  m_isOpenSeason = !m_isOpenSeason;
+  update();
+  // if (m_isOpenSeason) m_buttonOpenSeason.style('background-color', "#00FF00");
+  // else                m_buttonOpenSeason.style('background-color', "#FF0000");
+}
+
 function rollAllDice() {
   for (let p of m_players) {
     for (let d = 0; d < p.dice.length; d++) {
@@ -953,35 +985,51 @@ function rollAllDice() {
   update();
 }
 
-function rollMySelectedDice() {
-  let p = m_thisPlayer.seatPos;
-  for (let d = 0; d < m_players[p].dice.length; d++) {
-    let die = m_players[p].dice[d];
-    if (die.selected) {
-      die.curValue = floor(random(die.maxValue)) + 1;
-      die.selected = false;
+function rollSelectedDice() {
+  // let p = m_thisPlayer.seatPos;
+  for (let p of m_players) {
+    if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+
+    // for (let d = 0; d < m_players[p].dice.length; d++) {
+      // let die = m_players[p].dice[d];
+    for (let d = 0; d < p.dice.length; d++) {
+      let die = p.dice[d];
+      if (die.selected) {
+        die.curValue = floor(random(die.maxValue)) + 1;
+        die.selected = false;
+      }
     }
   }
   update();
 }
-function incrementMySelectedDice() {
-  let p = m_thisPlayer.seatPos;
-  for (let d = 0; d < m_players[p].dice.length; d++) {
-    let die = m_players[p].dice[d];
-    if (die.selected) {
-      die.curValue += 1;
-      if (die.curValue > die.maxValue) die.curValue = 1;
+function incrementSelectedDice() {
+  // let p = m_thisPlayer.seatPos;
+  for (let p of m_players) {
+    if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    // for (let d = 0; d < m_players[p].dice.length; d++) {
+      // let die = m_players[p].dice[d];
+    for (let d = 0; d < p.dice.length; d++) {
+      let die = p.dice[d];
+      if (die.selected) {
+        die.curValue += 1;
+        if (die.curValue > die.maxValue) die.curValue = 1;
+      }
     }
   }
   update();
 }
-function decrementMySelectedDice() {
-  let p = m_thisPlayer.seatPos;
-  for (let d = 0; d < m_players[p].dice.length; d++) {
-    let die = m_players[p].dice[d];
-    if (die.selected) {
-      die.curValue -= 1;
-      if (die.curValue <= 0) die.curValue = die.maxValue;
+function decrementSelectedDice() {
+  // let p = m_thisPlayer.seatPos;
+  for (let p of m_players) {
+    if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    // for (let d = 0; d < m_players[p].dice.length; d++) {
+    //   let die = m_players[p].dice[d];
+    for (let d = 0; d < p.dice.length; d++) {
+      let die = p.dice[d];
+      if (die.selected) {
+        die.curValue -= 1;
+        if (die.curValue <= 0) die.curValue = die.maxValue;
+      }
     }
   }
   update();
@@ -1030,6 +1078,10 @@ function draw() {
   // check for cursor over a card
   checkCardHover();
   checkCampAbilityHover();
+
+  if (m_isOpenSeason) m_buttonOpenSeason.style('background-color', "#00FF00");
+  else                m_buttonOpenSeason.style('background-color', "#FF0000");
+
 }  // draw()
 
 // Setting m_debugSet to soemthing other than -1 causes this function to be called in draw();
