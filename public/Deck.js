@@ -62,9 +62,9 @@ class Deck {
 
   // otherDeck: index of a Deck object
   moveTopCardToDeck(otherDeckIndex) {
-    console.log("this.moveTopCardToDeck");
+    // console.log("this.moveTopCardToDeck");
     let otherDeck = m_decks[otherDeckIndex];
-    console.log('otherDeck.setIndex, this.setIndex = ' , otherDeck.setIndex, this.setIndex);
+    // console.log('otherDeck.setIndex, this.setIndex = ' , otherDeck.setIndex, this.setIndex);
     
     if (otherDeck.setIndex != this.setIndex) {
       return;
@@ -115,15 +115,12 @@ class Deck {
       this.cards[i].x = xstart + i*xdelta;
       this.cards[i].y = ystart + i*ydelta + yoff;
 
-      // // This is sort of ugly.  Force decks to be faceup or face down, except the Line.  This will make it harder to debug
-      // if (this.deckIndex == DECK_HORDE || this.deckIndex == DECK_MONSTERS || this.deckIndex == DECK_UNUSED_LOCS || 
-      //     this.deckIndex == DECK_MAP_LOCS) {
-      //   this.cards[i].facedown = true;
-      // } else 
-      // Only force cards faceup in these decks.  Forcing facedown could be awkward.  But if we don't force selected cards facedown,
-      // it might work
+      // Force some cards faceup and some facedown.  Don't force selected cads to be facedown (useful for debugging)
       if (this.deckIndex == DECK_UNHALLOWED || this.deckIndex == DECK_GRAVEYARD || this.deckIndex == DECK_CUR_LOCS) {
         this.cards[i].facedown = false;
+      } else if (this.deckIndex == DECK_HORDE || this.deckIndex == DECK_MONSTERS || this.deckIndex == DECK_UNUSED_LOCS || 
+          this.deckIndex == DECK_MAP_LOCS) {
+        if (this.cards[i].selected == false) this.cards[i].facedown = true;
       }
 
       // remember whether the card is facedown, so we can restore it if we are spread

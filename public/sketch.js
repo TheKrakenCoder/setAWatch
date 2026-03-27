@@ -20,6 +20,7 @@ var m_initButton, m_nameInputButton, m_initialPlayer;
 var m_players = [];  
 var m_playersTemp = [];
 var m_initialized = false;
+var m_difficulty = 2;
 var m_mySocketId;
 var m_classRadio;
 var m_playerClassNameParagraph;
@@ -179,8 +180,9 @@ function setup() {
   /////////////////////////////////////////////
   // Create the final Monster deck.
 
-  // First eliminate 8 creatures
-  for (let i = 0; i < 8; i++) m_decks[DECK_MONSTERS].moveTopCardToDeck(DECK_REMOVED_FROM_GAME);
+  // First eliminate all but 28 creatures
+  // for (let i = 0; i < 8; i++) m_decks[DECK_MONSTERS].moveTopCardToDeck(DECK_REMOVED_FROM_GAME);
+  while (m_decks[DECK_MONSTERS].cards.length > 28) m_decks[DECK_MONSTERS].moveTopCardToDeck(DECK_REMOVED_FROM_GAME);
 
   // Now add 2 Acolytes and reshuffle
   let card = new Card(SET_CREATURES, start, DECK_MONSTERS);
@@ -193,17 +195,29 @@ function setup() {
   m_decks[DECK_MONSTERS].addCard(card);
   m_decks[DECK_MONSTERS].shuffle();
 
-  // Now add two Summons Cards, one in each half
-  card = new Card(SET_CREATURES, start, DECK_MONSTERS);
-  start += 1;
-  card.facedown = true;
-  let loc = floor(random(15));
-  m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
-  card = new Card(SET_CREATURES, start, DECK_MONSTERS);
-  start += 1;
-  card.facedown = true;
-  loc = floor(random(15)) + 15;
-  m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
+  // Add 1 sumomn card for each level of difficulty
+  let packetNum = floor(m_decks[DECK_MONSTERS].cards.length / m_difficulty);
+  console.log('packetNum = ' , packetNum);
+  console.log('m_difficulty = ' , m_difficulty);
+  
+  for (let i = 0; i < m_difficulty; i++) {
+    card = new Card(SET_CREATURES, start, DECK_MONSTERS);
+    start += 1;
+    card.facedown = true;
+    let loc = i*packetNum + floor(random(packetNum)) + i;  // the extra i is because we are adding cards as we go
+    m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
+  }
+  // // Now add two Summons Cards, one in each half
+  // card = new Card(SET_CREATURES, start, DECK_MONSTERS);
+  // start += 1;
+  // card.facedown = true;
+  // let loc = floor(random(15));
+  // m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
+  // card = new Card(SET_CREATURES, start, DECK_MONSTERS);
+  // start += 1;
+  // card.facedown = true;
+  // loc = floor(random(15)) + 15;
+  // m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
 
   /////////////////////////////////////////////
   // Create the Horde deck and adjust the Unhallowed deck so it has 7 items
@@ -349,8 +363,6 @@ function setup() {
   buttonCampTeleport.style('font-size', '16px');
   buttonCampTeleport.style('background-color', "#F0F0F0")
   buttonCampTeleport.mousePressed(campWizardTeleport);
-
-
 
   ///////////////////////////////////////////////
   // Controls for individual decks
@@ -516,15 +528,19 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
     monstTop.mousePressed(function(){
       let cards = findSelectedCards();
       for (let card of cards) {
-        // remove from old deck (remove before adding, because adding changes the deckIndex)
-        let idx = m_decks[card.deckIndex].findIndexInDeck(card)
-        let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
-        // add to new deck
-        cards2[0].facedown = true;
-        m_decks[deckIndex].addCard(cards2[0]);
-        m_spreadingToppingOrBottoming = true;
-        unselectAll();
-      }
+        if (card.setIndex == m_decks[deckIndex].setIndex) {
+          // remove from old deck (remove before adding, because adding changes the deckIndex)
+          let idx = m_decks[card.deckIndex].findIndexInDeck(card)
+          let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
+          // add to new deck
+          cards2[0].facedown = true;
+          m_decks[deckIndex].addCard(cards2[0]);
+          m_spreadingToppingOrBottoming = true;
+          unselectAll();
+        } else {
+          m_messageP.html("Card is not in the same set as the deck");
+        }
+      }  // for each card
       update();
     });
   }
@@ -536,14 +552,18 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
     monstBot.mousePressed(function(){
       let cards = findSelectedCards();
       for (let card of cards) {
-        // remove from old deck (remove before adding, because adding changes the deckIndex)
-        let idx = m_decks[card.deckIndex].findIndexInDeck(card)
-        let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
-        // add to new deck
-        cards2[0].facedown = true;
-        m_decks[deckIndex].addCardToBottom(cards2[0]);
-        unselectAll();
-        m_spreadingToppingOrBottoming = true;
+        if (card.setIndex == m_decks[deckIndex].setIndex) {
+          // remove from old deck (remove before adding, because adding changes the deckIndex)
+          let idx = m_decks[card.deckIndex].findIndexInDeck(card)
+          let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
+          // add to new deck
+          cards2[0].facedown = true;
+          m_decks[deckIndex].addCardToBottom(cards2[0]);
+          unselectAll();
+          m_spreadingToppingOrBottoming = true;
+        } else {
+          m_messageP.html("Card is not in the same set as the deck");
+        }
       }
       update();
     });
@@ -685,6 +705,7 @@ function mousePressed() {
         m_players[p].dice[d].selected = !m_players[p].dice[d].selected;
         if (m_players[p].dice[d].selected) {
           // m_selectedDieInfo = { playerNum: p, dieIndex:d, x:mouseX, y:mouseY };
+          // let plyr =  m_players[p].seatPos;
           m_selectedDieInfo = { playerNum: p, dieIndex:d, x:m_players[p].dice[d].x, y:m_players[p].dice[d].y };
           console.log('m_selectedDieInfo = ' , m_selectedDieInfo);
           
