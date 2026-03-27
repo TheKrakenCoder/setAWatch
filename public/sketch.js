@@ -66,9 +66,9 @@ function preload() {
   m_campImage = loadImage('Assets/GameBoardCamp.jpg');
   let img = loadImage('Assets/cardBackTemp.jpg');
   m_cardBackImages[BACK_GENERIC] = img;
-  img = loadImage('Assets/cardBackCreature.jpg');
+  img = loadImage('Assets/CardBackCreature.jpg');
   m_cardBackImages[BACK_CREATURE] = img;
-  img = loadImage('Assets/cardBackLocation.jpg');
+  img = loadImage('Assets/CardBackLocation.jpg');
   m_cardBackImages[BACK_LOCATION] = img;
   for (let i = 0; i < SET_NUM_SETS; i++) m_setImages[i] = [];
 
