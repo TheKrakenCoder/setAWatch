@@ -19,6 +19,7 @@ let m_decks = [];
 let m_message = "&nbsp";
 let m_firewood = 7;
 let m_isOpenSeason = false;
+let m_difficulty = 2;
 
 // // Using express: http://expressjs.com/
 // var express = require('express');
@@ -74,6 +75,7 @@ function heartbeat() {
     message: m_message,
     firewood: m_firewood,
     isOpenSeason: m_isOpenSeason,
+    difficulty: m_difficulty,
   };
   // emit to all players
   io.sockets.emit('heartbeat', data);
@@ -128,6 +130,7 @@ io.on(
       m_message = data.message;
       m_firewood = data.firewood;
       m_isOpenSeason = data.isOpenSeason;
+      m_difficulty = data.difficulty;
       heartbeat();
     });
 
@@ -151,6 +154,7 @@ io.on(
         if (m_message) m_message = "&nbsp";
         if (m_firewood) m_firewood = 7;
         if (m_isOpenSeason) m_isOpenSeason = false;
+        if (m_difficulty) m_difficulty = 2;
       }
     });
   }
