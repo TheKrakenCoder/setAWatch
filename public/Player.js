@@ -44,6 +44,10 @@ class Player {
     let xmult = 1;  // 1 card width
     deck.show(xstart, ystart, xmult, 0);
 
+    // separator line after first 3 cards
+    stroke(m_dieColors[this.class]); fill(m_dieColors[this.class]);
+    // line(1055+3*m_cw - 3, 75+225*this.seatPos, 1055+3*m_cw, 75+225*this.seatPos+m_ch);
+    rect(1055+3*m_cw, 75+225*this.seatPos, 7, m_ch);
   }
 
   showDice() {

@@ -53,6 +53,7 @@ let m_selectedDieInfo = {};
 let m_didDragDie = false;
 let m_firewood = 7;
 let m_buttonOpenSeason, m_isOpenSeason = false;
+let m_buttonsDifficulty = [];
 
     
 // Decks are separate collections of cards on the table during play.  Each Deck is associated with one Set and many decks can use
@@ -197,29 +198,20 @@ function setup() {
   m_decks[DECK_MONSTERS].addCard(card);
   m_decks[DECK_MONSTERS].shuffle();
 
-  // Add 1 sumomn card for each level of difficulty
-  let packetNum = floor(m_decks[DECK_MONSTERS].cards.length / m_difficulty);
-  console.log('packetNum = ' , packetNum);
-  console.log('m_difficulty = ' , m_difficulty);
+  addSummonsCards();
   
-  for (let i = 0; i < m_difficulty; i++) {
-    card = new Card(SET_CREATURES, start, DECK_MONSTERS);
-    start += 1;
-    card.facedown = true;
-    let loc = i*packetNum + floor(random(packetNum)) + i;  // the extra i is because we are adding cards as we go
-    m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
-  }
-  // // Now add two Summons Cards, one in each half
-  // card = new Card(SET_CREATURES, start, DECK_MONSTERS);
-  // start += 1;
-  // card.facedown = true;
-  // let loc = floor(random(15));
-  // m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
-  // card = new Card(SET_CREATURES, start, DECK_MONSTERS);
-  // start += 1;
-  // card.facedown = true;
-  // loc = floor(random(15)) + 15;
-  // m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
+  // // Add 1 sumomn card for each level of difficulty
+  // let packetNum = floor(m_decks[DECK_MONSTERS].cards.length / m_difficulty);
+  // console.log('packetNum = ' , packetNum);
+  // console.log('m_difficulty = ' , m_difficulty);
+  
+  // for (let i = 0; i < m_difficulty; i++) {
+  //   card = new Card(SET_CREATURES, start, DECK_MONSTERS);
+  //   start += 1;
+  //   card.facedown = true;
+  //   let loc = i*packetNum + floor(random(packetNum)) + i;  // the extra i is because we are adding cards as we go
+  //   m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
+  // }
 
   /////////////////////////////////////////////
   // Create the Horde deck and adjust the Unhallowed deck so it has 7 items
@@ -361,6 +353,39 @@ function setup() {
       update();
     });
 
+  m_buttonsDifficulty[0] = createNormalButton("D-1", 7*m_bw, 750, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[0].style('font-size', '16px');
+  m_buttonsDifficulty[0].style('background-color', "#F0F0F0")
+  m_buttonsDifficulty[0].mousePressed(function(){
+      m_difficulty = 1;
+      addSummonsCards();
+      update();
+    });
+  m_buttonsDifficulty[1] = createNormalButton("D-2", 7*m_bw+m_bw/2, 750, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[1].style('font-size', '16px');
+  m_buttonsDifficulty[1].style('background-color', "#F0F0F0")
+  m_buttonsDifficulty[1].mousePressed(function(){
+      m_difficulty = 2;
+      addSummonsCards();
+      update();
+    });
+  m_buttonsDifficulty[2] = createNormalButton("D-3", 7*m_bw, 750+m_bh/2, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[2].style('font-size', '16px');
+  m_buttonsDifficulty[2].style('background-color', "#F0F0F0")
+  m_buttonsDifficulty[2].mousePressed(function(){
+      m_difficulty = 3;
+      addSummonsCards();
+      update();
+    });
+  m_buttonsDifficulty[3] = createNormalButton("D-4", 7*m_bw+m_bw/2, 750+m_bh/2, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[3].style('font-size', '16px');
+  m_buttonsDifficulty[3].style('background-color', "#F0F0F0")
+  m_buttonsDifficulty[3].mousePressed(function(){
+      m_difficulty = 4;
+      addSummonsCards();
+      update();
+    });
+
   let buttonCampCheckMap = createNormalButton("Camp Check Map", 8*m_bw, 750, m_bw, m_bh);
   buttonCampCheckMap.style('font-size', '16px');
   buttonCampCheckMap.style('background-color', "#F0F0F0")
@@ -465,6 +490,7 @@ function setup() {
     setMessageFromServerData(data.message);
     m_firewood = data.firewood;
     m_isOpenSeason = data.isOpenSeason;
+    m_difficulty = data.difficulty;
     // // Note I wasn't able to pass in m_discards into the function here and fill it in 
     // // using the function argument.  I had to directly specify m_discards in the function.
     // // This is probably because I keep changing what m_discards is.
@@ -498,6 +524,32 @@ function createLocationCardsAndAddToDeck(setIdx, deckIdx, startIdx, len) {
     card.facedown = true;
     m_decks[deckIdx].addCard(card);
   }
+}
+
+function addSummonsCards() {
+  let start = NUM_MONSTER + NUM_UNHALLOWED + NUM_ACOLYTE;
+
+  // first remove any existing sumomns cards in the monster deck.  These cards cards with 
+  // indexes >= start
+  for (let i = m_decks[DECK_MONSTERS].cards.length-1; i >= 0; i--) {
+    if (m_decks[DECK_MONSTERS].cards[i].index >= start) m_decks[DECK_MONSTERS].cards.splice(i, 1);
+  }
+
+  // Add 1 summon card for each level of difficulty
+  let packetNum = floor(m_decks[DECK_MONSTERS].cards.length / m_difficulty);
+  console.log('packetNum = ' , packetNum);
+  console.log('m_difficulty = ' , m_difficulty);
+  console.log('start = ' , start);
+  console.log('deck len = ' , m_decks[DECK_MONSTERS].cards.length);
+  
+  for (let i = 0; i < m_difficulty; i++) {
+    card = new Card(SET_CREATURES, start, DECK_MONSTERS);
+    start += 1;
+    card.facedown = true;
+    let loc = i*packetNum + floor(random(packetNum)) + i;  // the extra i is because we are adding cards as we go
+    m_decks[DECK_MONSTERS].cards.splice(loc, 0, card);
+  }
+
 }
 
 // x, y of card
@@ -608,6 +660,7 @@ function update() {
       message: msg,
       firewood: m_firewood,
       isOpenSeason: m_isOpenSeason,
+      difficulty: m_difficulty,
     };
     m_socket.emit('update', data);
   }
@@ -854,8 +907,14 @@ function findSelectedCards() {
   let cards = [];
   for (let d = 0; d < m_decks.length; d++) {
     for (let c = 0; c < m_decks[d].cards.length; c++) {
-      if (m_decks[d].cards[c].selected) {
-       cards.push(m_decks[d].cards[c]);
+      let card = m_decks[d].cards[c];
+      // if (m_decks[d].cards[c].selected) {
+      if (card.selected) {
+        // don't return other player's cards unless it's open season
+        if (m_isOpenSeason || card.deckIndex > DECK_WIZARD || m_thisPlayer.class == card.deckIndex) {
+          // cards.push(m_decks[d].cards[c]);
+          cards.push(card);
+        }
       }
     }
   }
@@ -985,6 +1044,7 @@ function rollAllDice() {
   update();
 }
 
+// JMU for some reason I didn't write a findSelectedDice() function like I have a findSelectedCards().
 function rollSelectedDice() {
   // let p = m_thisPlayer.seatPos;
   for (let p of m_players) {
@@ -1081,6 +1141,9 @@ function draw() {
 
   if (m_isOpenSeason) m_buttonOpenSeason.style('background-color', "#00FF00");
   else                m_buttonOpenSeason.style('background-color', "#FF0000");
+
+  for (let i = 0; i < m_buttonsDifficulty.length; i++) m_buttonsDifficulty[i].style('background-color', "#F0F0F0");
+  m_buttonsDifficulty[m_difficulty-1].style('background-color', "#00FF00");
 
 }  // draw()
 

@@ -104,7 +104,7 @@ class Deck {
       noStroke();  fill(100, 200);
       rect(946, 0, width-946, height);
       xwrap = floor((width-1055)/this.cw) + 1;
-      console.log('xwrap = ' , xwrap);
+      // console.log('xwrap = ' , xwrap);
       
       xstart = 946; ystart = 0; xmult = 1; ymult = 0;
     }
