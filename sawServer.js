@@ -152,9 +152,9 @@ io.on(
       if (m_players.length == 0) {
         if (m_decks)  m_decks = [];
         if (m_message) m_message = "&nbsp";
-        if (m_firewood) m_firewood = 7;
-        if (m_isOpenSeason) m_isOpenSeason = false;
-        if (m_difficulty) m_difficulty = 2;
+        m_firewood = 7;
+        m_isOpenSeason = false;
+        m_difficulty = 2;
       }
     });
   }
