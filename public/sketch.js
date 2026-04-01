@@ -48,12 +48,16 @@ var m_debugSet=-1, m_debugDeck=-1;
 let m_spreadingToppingOrBottoming = false;  // when we click these buttons on a deck we don't want to select the card
 const m_dieSizes = [8, 6, 8, 6, 8, 6];      // beats master thru wizard
 const m_dieColors = ['blue', 'red', 'green', 'orange', 'purple', 'yellow'];
+const m_playerBackgroundColors = ['lightblue', '#FF7F7F', 'lightgreen', '#FBBF77', '#A875D9', 'lightyellow'];
+const m_isRangedClass = [1, 1, 1, 0, 0, 0];
 const m_dieSize = 40;
 let m_selectedDieInfo = {};
 let m_didDragDie = false;
 let m_firewood = 7;
 let m_buttonOpenSeason, m_isOpenSeason = false;
 let m_buttonsDifficulty = [];
+let m_fireX = [342, 388, 429, 459, 469, 463, 436, 395, 345, 297, 252, 227, 219, 228, 256, 297];
+let m_fireY = [134, 146, 170, 212, 254, 303, 347, 377, 387, 382, 347, 308, 256, 211, 169, 143];
 
     
 // Decks are separate collections of cards on the table during play.  Each Deck is associated with one Set and many decks can use
@@ -99,6 +103,7 @@ function preload() {
 
 function setup() {
   createCanvas(1600, 900);
+  angleMode(DEGREES);
 
   m_playerClassNameParagraph = createP();
   m_playerClassNameParagraph.position(400, 400);
@@ -337,22 +342,6 @@ function setup() {
   buttonIncrementSelectedDice.style('background-color', "#F0F0F0")
   buttonIncrementSelectedDice.mousePressed(incrementSelectedDice);
 
-  let buttonDecrementFirewood = createNormalButton("Decrease Firewood", 5*m_bw, 825, m_bw, m_bh);
-  buttonDecrementFirewood.style('font-size', '16px');
-  buttonDecrementFirewood.style('background-color', "#F0F0F0")
-  buttonDecrementFirewood.mousePressed(function(){
-      if (m_firewood > 0) m_firewood --;
-      update();
-    });
-
-  let buttonIncrementFirewood = createNormalButton("Increase Firewood", 6*m_bw, 825, m_bw, m_bh);
-  buttonIncrementFirewood.style('font-size', '16px');
-  buttonIncrementFirewood.style('background-color', "#F0F0F0")
-  buttonIncrementFirewood.mousePressed(function(){
-      if (m_firewood < 15) m_firewood ++;
-      update();
-    });
-
   m_buttonsDifficulty[0] = createNormalButton("D-1", 7*m_bw, 750, m_bw/2, m_bh/2);
   m_buttonsDifficulty[0].style('font-size', '16px');
   m_buttonsDifficulty[0].style('background-color', "#F0F0F0")
@@ -404,9 +393,9 @@ function setup() {
                     doDeal, doSpread, doTop, doBottom);
   createDeckButtons(DECK_HORDE, DECK_LINE, 700, 0, m_decks[DECK_HORDE].cw, m_decks[DECK_HORDE].ch, 
                     doDeal, doSpread, doTop, doBottom);
-  createDeckButtons(DECK_UNHALLOWED, DECK_LINE, 700, m_ch, m_decks[DECK_UNHALLOWED].cw, m_decks[DECK_UNHALLOWED].ch, 
+  createDeckButtons(DECK_UNHALLOWED, DECK_LINE, 700, m_ch+35, m_decks[DECK_UNHALLOWED].cw, m_decks[DECK_UNHALLOWED].ch, 
                     doDeal, doSpread, doTop, doBottom);
-  createDeckButtons(DECK_GRAVEYARD, DECK_LINE, 809, m_ch, m_decks[DECK_GRAVEYARD].cw, m_decks[DECK_GRAVEYARD].ch, 
+  createDeckButtons(DECK_GRAVEYARD, DECK_LINE, 809, m_ch+35, m_decks[DECK_GRAVEYARD].cw, m_decks[DECK_GRAVEYARD].ch, 
                     doDeal, doSpread, doTop, doBottom);
   doDeal = false, doSpread = false, doTop=true, doBottom=true;
   createDeckButtons(DECK_LINE, DECK_LINE, 0, 450, m_decks[DECK_LINE].cw, m_decks[DECK_LINE].ch, 
@@ -434,6 +423,28 @@ function setup() {
       if (m_players[i].campCounter > 0) m_players[i].campCounter--;
     });
   }
+
+  ////////////////////////////////////////////
+  // Fire Buttons
+  let fireX = 687/2;
+  let fireY = 109 + (341/2);
+
+  let buttonDecrementFirewood = createNormalButton("-", fireX-75, fireY-m_bs, m_bs, m_bs);
+  buttonDecrementFirewood.style('font-size', '16px');
+  buttonDecrementFirewood.style('background-color', "#F0F0F0")
+  buttonDecrementFirewood.mousePressed(function(){
+      if (m_firewood > 0) m_firewood--;
+      update();
+    });
+
+  let buttonIncrementFirewood = createNormalButton("+", fireX+75-m_bs/2, fireY-m_bs, m_bs, m_bs);
+  buttonIncrementFirewood.style('font-size', '16px');
+  buttonIncrementFirewood.style('background-color', "#F0F0F0")
+  buttonIncrementFirewood.mousePressed(function(){
+      if (m_firewood < 15) m_firewood++;
+      update();
+    });
+
 
   ///////////////////////////////////////////////
   // Test
@@ -754,7 +765,7 @@ function findCardUnderCursor() {
 }
 
 function mousePressed() {
-  console.log('mousePressed');
+  console.log('mousePressed ', mouseX, mouseY);
   // Don't pay attention to presses in the control area
   if (mouseX > 0 && mouseX < m_cw*8 && mouseY > 750) return;
 
@@ -763,7 +774,8 @@ function mousePressed() {
   let foundDie = false;
   for (let p = 0; p < m_players.length; p++) {
     // If openSeason is off, don't check other player's dice
-    if (!m_isOpenSeason && m_thisPlayer.seatPos != p) continue;
+    // if (!m_isOpenSeason && m_thisPlayer.seatPos) continue;
+    if (!m_isOpenSeason && m_thisPlayer.seatPos != p && m_players[p].name != m_thisPlayer.name) continue;
     for (let d = 0; d < m_players[p].dice.length; d++) {
       let die = m_players[p].dice[d];
       if (mouseX > die.x && mouseX < die.x + m_dieSize && mouseY > die.y && mouseY < die.y + m_dieSize) {
@@ -819,8 +831,9 @@ function mousePressed() {
 
   let foundCard = findCardUnderCursor();
 
-  // You can't select other plays cards unless it is open season
-  if (foundCard && !m_isOpenSeason && foundCard.deckIndex <= DECK_WIZARD && m_thisPlayer.class != foundCard.deckIndex) foundCard = null;
+  // You can't select other plays cards unless it is open season or you have the same name
+  if (foundCard && !m_isOpenSeason && foundCard.deckIndex <= DECK_WIZARD && m_thisPlayer.class != foundCard.deckIndex &&
+      m_thisPlayer.name != m_players[foundCard.deckIndex].name) foundCard = null;
 
   if (foundCard) foundCard.selected = !foundCard.selected;
 
@@ -875,22 +888,42 @@ function mouseReleased() {
 }
 
 function unselectAllDice() {
-  if (m_isOpenSeason) {
-    for (let i = 0; i < m_players.length; i++) {
-      for (d of m_players[i].dice) d.selected = false;
+  // if (m_isOpenSeason) {
+  //   for (let i = 0; i < m_players.length; i++) {
+  //     for (d of m_players[i].dice) d.selected = false;
+  //   }
+  // } else {
+  //   for (d of m_players[m_thisPlayer.seatPos].dice) d.selected = false;
+  // }
+
+  for (let i = 0; i < m_players.length; i++) {
+    for (d of m_players[i].dice) {
+      if (m_isOpenSeason || m_thisPlayer.name == m_players[i].name) d.selected = false;
     }
-  } else {
-    for (d of m_players[m_thisPlayer.seatPos].dice) d.selected = false;
   }
 
+}
+
+// given a deck index find the player index associated with it (if any).
+// Return: the player index or -1 if not found
+function getPlayerIndexFromDeckIndex(deckIndex) {
+  if (deckIndex > DECK_WIZARD) return -1;
+
+  for (let p = 0; p < m_players.length; p++) {
+    if (m_players[p].class == deckIndex) return p;
+  }
+
+  return -1;
 }
 
 // Unselect all cards and return boolean if any cards were selected
 function unselectAll() {
   let foundSelectedCard = false;
   for (let d = 0; d < m_decks.length; d++) {
-    // you can't unselect other people's cards by clicking on the table, unless it's open season
-    if (m_thisPlayer.class == d || d > DECK_WIZARD || m_isOpenSeason) {
+    // you can't unselect other people's cards by clicking on the table, unless it's open season or they have the same name
+    let player = getPlayerIndexFromDeckIndex(d);
+    // if (m_thisPlayer.class == d || d > DECK_WIZARD || m_isOpenSeason) {
+    if ((player != -1 && m_thisPlayer.name == m_players[player].name) || (m_thisPlayer.class == d || d > DECK_WIZARD || m_isOpenSeason)) {
       for (let c = 0; c < m_decks[d].cards.length; c++) {
         if (m_decks[d].cards[c].selected) {
           m_decks[d].cards[c].selected=false;
@@ -910,8 +943,9 @@ function findSelectedCards() {
       let card = m_decks[d].cards[c];
       // if (m_decks[d].cards[c].selected) {
       if (card.selected) {
-        // don't return other player's cards unless it's open season
-        if (m_isOpenSeason || card.deckIndex > DECK_WIZARD || m_thisPlayer.class == card.deckIndex) {
+        let player = getPlayerIndexFromDeckIndex(d);
+        // don't return other player's cards unless it's open season or they have the same name
+        if ((player != -1 && m_thisPlayer.name == m_players[player].name) || (m_isOpenSeason || card.deckIndex > DECK_WIZARD || m_thisPlayer.class == card.deckIndex)) {
           // cards.push(m_decks[d].cards[c]);
           cards.push(card);
         }
@@ -1019,6 +1053,10 @@ function removeSelectedCardFromGame() {
     let idx = m_decks[card.deckIndex].findIndexInDeck(card)
     let cards2 = m_decks[card.deckIndex].cards.splice(idx, 1);
     cards2[0].selected = false;  // this is redundant
+    // move the card far offscreen so it doesn't take part in selecting.  There must be
+    // a better way to do this.
+    cards2[0].x = width*2; 
+    cards2[0].y = height*2; 
     m_decks[DECK_REMOVED_FROM_GAME].addCard(cards2[0]);
   }
   update();
@@ -1048,7 +1086,8 @@ function rollAllDice() {
 function rollSelectedDice() {
   // let p = m_thisPlayer.seatPos;
   for (let p of m_players) {
-    if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    // if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    if (!m_isOpenSeason && m_thisPlayer.name != p.name) continue;
 
     // for (let d = 0; d < m_players[p].dice.length; d++) {
       // let die = m_players[p].dice[d];
@@ -1065,7 +1104,8 @@ function rollSelectedDice() {
 function incrementSelectedDice() {
   // let p = m_thisPlayer.seatPos;
   for (let p of m_players) {
-    if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    // if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    if (!m_isOpenSeason && m_thisPlayer.name != p.name) continue;
     // for (let d = 0; d < m_players[p].dice.length; d++) {
       // let die = m_players[p].dice[d];
     for (let d = 0; d < p.dice.length; d++) {
@@ -1081,7 +1121,8 @@ function incrementSelectedDice() {
 function decrementSelectedDice() {
   // let p = m_thisPlayer.seatPos;
   for (let p of m_players) {
-    if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    // if (!m_isOpenSeason && m_thisPlayer.seatPos != p.seatPos) continue;
+    if (!m_isOpenSeason && m_thisPlayer.name != p.name) continue;
     // for (let d = 0; d < m_players[p].dice.length; d++) {
     //   let die = m_players[p].dice[d];
     for (let d = 0; d < p.dice.length; d++) {
@@ -1100,11 +1141,13 @@ function campCheckMap() {
   m_decks[DECK_UNUSED_LOCS].moveTopCardToDeck(DECK_TEMP_LOCS);
   m_decks[DECK_MAP_LOCS].moveTopCardToDeck(DECK_TEMP_LOCS);
   // for (card of m_decks[DECK_MAP_LOCS].cards) card.facedown = false;
+  update();
 }
 
 function campWizardTeleport() {
   // Add the top 4 cards of Unseen Locations to the Temporary Location
   for (let i = 0; i < 4; i++) m_decks[DECK_UNUSED_LOCS].moveTopCardToDeck(DECK_TEMP_LOCS);
+  update();
 }
 
 ////////////////////////////////////////////
@@ -1190,42 +1233,49 @@ function drawBoard() {
   m_decks[DECK_UNUSED_LOCS].show(0, 0, 0, 0);
   m_decks[DECK_MAP_LOCS].show(m_ch, 0, 0, 0);
   m_decks[DECK_CUR_LOCS].show(2*m_ch, 0, 0, 0);
-  stroke(0); noFill(); strokeWeight(1);
+  stroke(0); noFill(); strokeWeight(1.5);
   rect(0, 0, m_ch, m_cw);
-  text('UNUSED: ' + m_decks[DECK_UNUSED_LOCS].cards.length, 0, m_cw/2);
+  // stroke(0); //fill(0); strokeWeight(2);
+  text('UNUSED: ' + m_decks[DECK_UNUSED_LOCS].cards.length, 0, 25); // m_cw/2);
+  // stroke(0); noFill(); strokeWeight(1);
   rect(0, 0, m_ch, m_cw);
-  text('   MAP: ' + m_decks[DECK_MAP_LOCS].cards.length, m_ch, m_cw/2);
+  // stroke(255); fill(0); strokeWeight(1);
+  text('   MAP: ' + m_decks[DECK_MAP_LOCS].cards.length, m_ch, 25); // m_cw/2);
+  // stroke(0); noFill(); strokeWeight(1);
   rect(0, 0, m_ch, m_cw);
-  text('CURRENT: ' + m_decks[DECK_CUR_LOCS].cards.length, 2*m_ch, m_cw/2);
+  // stroke(255); fill(0); strokeWeight(1);
+  text('CURRENT: ' + m_decks[DECK_CUR_LOCS].cards.length, 2*m_ch, 25); // m_cw/2);
 
-  // JMU this should be put in a function can then called once per deck
+  // JMU this could possibly be put in a function can then called once per deck
   // Hoard
   stroke(0); noFill(); strokeWeight(1);
-  rect(700, 0, m_cw, m_ch);
-  m_decks[DECK_HORDE].show(700, 0, 0, 0);
+  rect(700, 25, m_cw, m_ch);
+  m_decks[DECK_HORDE].show(700, 25, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("HOARD "+m_decks[DECK_HORDE].cards.length, 700, m_ch/2)
+  // text("HOARD "+m_decks[DECK_HORDE].cards.length, 700, m_ch/2)
+  text("HOARD "+m_decks[DECK_HORDE].cards.length, 700, 20)
 
   // Monsters
   stroke(0); noFill(); strokeWeight(1);
-  rect(700+m_cw, 0, m_cw, m_ch);
-  m_decks[DECK_MONSTERS].show(700+m_cw, 0, 0, 0);
+  rect(700+m_cw, 25, m_cw, m_ch);
+  m_decks[DECK_MONSTERS].show(700+m_cw, 25, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("CREAT "+m_decks[DECK_MONSTERS].cards.length, 700+m_cw, m_ch/2)
+  text("CREAT "+m_decks[DECK_MONSTERS].cards.length, 700+m_cw, 20)
 
   // Unhallowed
   stroke(0); noFill(); strokeWeight(1);
-  rect(700, m_ch, m_cw, m_ch);
-  m_decks[DECK_UNHALLOWED].show(700, m_ch, 0, 0);
+  rect(700, m_ch + 50, m_cw, m_ch);
+  m_decks[DECK_UNHALLOWED].show(700, m_ch + 50, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("UNHALL " + m_decks[DECK_UNHALLOWED].cards.length, 700, 3*m_ch/2)
+  // text("UNHALL " + m_decks[DECK_UNHALLOWED].cards.length, 700, 3*m_ch/2)
+  text("UNHALL " + m_decks[DECK_UNHALLOWED].cards.length, 700, m_ch + 45)
 
   // Graveyard
   stroke(0); noFill(); strokeWeight(1);
-  rect(700+m_cw, m_ch, m_cw, m_ch);
-  m_decks[DECK_GRAVEYARD].show(700+m_cw, m_ch, 0, 0);
+  rect(700+m_cw, m_ch + 50, m_cw, m_ch);
+  m_decks[DECK_GRAVEYARD].show(700+m_cw, m_ch + 50, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("GRAVE " +m_decks[DECK_GRAVEYARD].cards.length, 700+m_cw, 3*m_ch/2)
+  text("GRAVE " +m_decks[DECK_GRAVEYARD].cards.length, 700+m_cw, m_ch + 45)
 
   // // player 1 cards
   // for (let i = 0; i < 5; i++) {
@@ -1239,7 +1289,7 @@ function drawBoard() {
   for (let i = 0; i < 6; i++) rect(width-((5+1)*m_cw), i*m_ch, m_cw, m_ch);
   m_decks[DECK_GENERIC].show(946, 0, 0, m_ch);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("GENERAL "+m_decks[DECK_GENERIC].cards.length, width-((5+1)*m_cw), m_ch/2)
+  text("GENERAL "+m_decks[DECK_GENERIC].cards.length, width-((5+1)*m_cw), 25); //m_ch/2)
 
   // The Line
   noFill();
@@ -1250,7 +1300,7 @@ function drawBoard() {
   stroke(0); fill(0); strokeWeight(1); textSize(16);
   text("LINE", 0, 450+m_ch/2)
   stroke(0); noFill(); strokeWeight(1);
-  rect(700+m_cw, m_ch, m_cw, m_ch);
+  // rect(700+m_cw, m_ch, m_cw, m_ch);
   m_decks[DECK_LINE].show(0, 450, 1, 0, 8);
 
   // the buttons on the bottom
@@ -1260,23 +1310,31 @@ function drawBoard() {
     rect(0+i*m_bw, 750+m_bh, m_bw, m_bh);
   }
 
-  // fire indicator
+  // fire text indicator
   let fireX = 687/2;
   let fireY = 109 + (341/2);
   let numReveal = 0;
   if (m_firewood < 7) numReveal = 1;
   else if (m_firewood < 12) numReveal = 2;
   else numReveal = 3;
-  stroke(255, 0, 0); fill(255, 0, 0); strokeWeight(1); textSize(32);
+  stroke(255, 255, 0); fill(255, 0, 0); strokeWeight(1); textSize(32);
   text(m_firewood + '(' + numReveal + ')', fireX-25, fireY);
+  // fire circle indicator
+  circle(m_fireX[m_firewood], m_fireY[m_firewood], 26);
+  
 
   // If there is anything in the temporary location deck, draw it
   if (m_decks[DECK_TEMP_LOCS].cards.length > 0) m_decks[DECK_TEMP_LOCS].show();
 
-  // Players Dice -  must be drawn last so they are clickable
-  stroke(0); noFill(); strokeWeight(1);
-  for (player of m_players) player.showDice();
-
+  // Players Dice -  must be drawn last so they are clickable.  Don't draw them if we spread a deck.
+  // The temp location deck is always spread, so disregard it in our check.  Don't draw the dice if
+  // the size of the temp location deck is greater than 0 (which means we are drawing it)
+  let didSpread = false;
+  for (let i = 0; i < m_decks.length; i++) if (m_decks[i].isSpread && i != DECK_TEMP_LOCS) didSpread = true;
+  if (!didSpread || m_decks[DECK_TEMP_LOCS].length > 0) {
+    stroke(0); noFill(); strokeWeight(1);
+    for (player of m_players) player.showDice();
+  }
 
 }  // drawBoard()
 

@@ -22,13 +22,15 @@ class Player {
 
   showNoDice() {
     // underlying rect
-    fill(0, 100, 50); noStroke();
+    fill(m_playerBackgroundColors[this.class]); noStroke();
     rect(1055, 225*this.seatPos, width-1055, 75);
 
     // name
     stroke(0); noFill(); textSize(16);
-    text(this.name, 1055, 25 + 225*this.seatPos)
-    text(m_classNames[this.class], 1055, 50 + 225*this.seatPos)
+    text(this.name, 1055, 20 + 225*this.seatPos)
+    text(m_classNames[this.class], 1055, 40 + 225*this.seatPos)
+    let rng = (m_isRangedClass[this.class] == 1) ? "Ranged" : "Melee";
+    text(rng, 1055, 60 + 225*this.seatPos);
     text(m_classCamp[this.class], 1150, 25 + 225*this.seatPos)
 
     // camp counter
