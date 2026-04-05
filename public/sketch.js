@@ -32,10 +32,12 @@ var m_bs = 30;               // width height for buttons on cards
 var m_campImage;
 var m_buttonTest, m_buttonCardTest;
 var m_buttonShiftLeft, m_buttonSwapTwoCards;
+let m_allButtons = [];
 var m_setImages = [];
 // var m_deckImages = [];
 var m_decks = [];
 var m_cardBackImages = [];
+let m_tableBackgroundImage;
 // Message from server
 var m_messageP;
 var m_oldMessage = "&nbsp";
@@ -58,6 +60,7 @@ let m_buttonOpenSeason, m_isOpenSeason = false;
 let m_buttonsDifficulty = [];
 let m_fireX = [342, 388, 429, 459, 469, 463, 436, 395, 345, 297, 252, 227, 219, 228, 256, 297];
 let m_fireY = [134, 146, 170, 212, 254, 303, 347, 377, 387, 382, 347, 308, 256, 211, 169, 143];
+let m_s = 1.0;
 
     
 // Decks are separate collections of cards on the table during play.  Each Deck is associated with one Set and many decks can use
@@ -71,6 +74,7 @@ const SET_BEASTMASTER = 0, SET_CLERIC = 1, SET_RANGER = 2, SET_ROGUE = 3, SET_WA
 const BACK_CREATURE = 0, BACK_LOCATION = 1, BACK_GENERIC = 2;
 
 function preload() {
+  m_tableBackgroundImage = loadImage('Assets/TableBackground.jpg');
   m_campImage = loadImage('Assets/GameBoardCamp.jpg');
   let img = loadImage('Assets/cardBackTemp.jpg');
   m_cardBackImages[BACK_GENERIC] = img;
@@ -125,7 +129,8 @@ function setup() {
 
   ////////////////////////////////////////////
   // Resize stuff as needed
-  m_campImage.resize(0, 341);
+  // m_campImage.resize(0, 341);
+  // m_tableBackgroundImage.resize(1600, 900);
   // m_cardBackTempImage.resize(m_cw, m_ch);
 
   // resize set images
@@ -291,56 +296,67 @@ function setup() {
   buttonFlip.style('font-size', '16px');
   buttonFlip.style('background-color', "#F0F0F0")
   buttonFlip.mousePressed(flipCards);
+  m_allButtons.push(new Button(buttonFlip, 0*m_bw, 750, m_bw, m_bh));
 
   let buttonExhaust = createNormalButton("(Un)Exhaust Cards", 1*m_bw, 750, m_bw, m_bh);
   buttonExhaust.style('font-size', '16px');
   buttonExhaust.style('background-color', "#F0F0F0")
   buttonExhaust.mousePressed(exhaustToggleCards);
+  m_allButtons.push(new Button(buttonExhaust, 1*m_bw, 750, m_bw, m_bh));
 
   m_buttonShiftLeft = createNormalButton("Shift Cards Left", 2*m_bw, 750, m_bw, m_bh);
   m_buttonShiftLeft.style('font-size', '16px');
   m_buttonShiftLeft.style('background-color', "#F0F0F0")
   m_buttonShiftLeft.mousePressed(shiftLeft);
+  m_allButtons.push(new Button(m_buttonShiftLeft, 2*m_bw, 750, m_bw, m_bh));
 
   m_buttonSwapTwoCards = createNormalButton("Swap Two Cards", 3*m_bw, 750, m_bw, m_bh);
   m_buttonSwapTwoCards.style('font-size', '16px');
   m_buttonSwapTwoCards.style('background-color', "#F0F0F0")
   m_buttonSwapTwoCards.mousePressed(swapTwoCards);
+  m_allButtons.push(new Button(m_buttonSwapTwoCards, 3*m_bw, 750, m_bw, m_bh));
 
   let buttonShuffle = createNormalButton("Shuffle Deck of Selected Card", 4*m_bw, 750, m_bw, m_bh);
   buttonShuffle.style('font-size', '16px');
   buttonShuffle.style('background-color', "#F0F0F0")
   buttonShuffle.mousePressed(shuffleDeckOfSelectedCard);
+  m_allButtons.push(new Button(buttonShuffle, 4*m_bw, 750, m_bw, m_bh));
 
   let buttonRemove = createNormalButton("Remove Selected Card from Game", 5*m_bw, 750, m_bw, m_bh);
   buttonRemove.style('font-size', '16px');
   buttonRemove.style('background-color', "#F0F0F0")
   buttonRemove.mousePressed(removeSelectedCardFromGame);
+  m_allButtons.push(new Button(buttonRemove, 5*m_bw, 750, m_bw, m_bh));
 
   m_buttonOpenSeason = createNormalButton("Open Season", 0*m_bw, 825, m_bw, m_bh);
   m_buttonOpenSeason.style('font-size', '16px');
   m_buttonOpenSeason.style('background-color', "#FF0000")
   m_buttonOpenSeason.mousePressed(toggleOpenSeason);
+  m_allButtons.push(new Button(m_buttonOpenSeason, 0*m_bw, 825, m_bw, m_bh));
 
   let buttonRollAllDice = createNormalButton("Roll All Dice", 1*m_bw, 825, m_bw, m_bh);
   buttonRollAllDice.style('font-size', '16px');
   buttonRollAllDice.style('background-color', "#F0F0F0")
   buttonRollAllDice.mousePressed(rollAllDice);
+  m_allButtons.push(new Button(buttonRollAllDice, 1*m_bw, 825, m_bw, m_bh));
 
   let buttonRollSelectedDice = createNormalButton("Roll Selected Dice", 2*m_bw, 825, m_bw, m_bh);
   buttonRollSelectedDice.style('font-size', '16px');
   buttonRollSelectedDice.style('background-color', "#F0F0F0")
   buttonRollSelectedDice.mousePressed(rollSelectedDice);
+  m_allButtons.push(new Button(buttonRollSelectedDice, 2*m_bw, 825, m_bw, m_bh));
 
   let buttonDecrementSelectedDice = createNormalButton("Decrement Selected Dice", 3*m_bw, 825, m_bw, m_bh);
   buttonDecrementSelectedDice.style('font-size', '16px');
   buttonDecrementSelectedDice.style('background-color', "#F0F0F0")
   buttonDecrementSelectedDice.mousePressed(decrementSelectedDice);
+  m_allButtons.push(new Button(buttonDecrementSelectedDice, 3*m_bw, 825, m_bw, m_bh));
 
   let buttonIncrementSelectedDice = createNormalButton("Increment Selected Dice", 4*m_bw, 825, m_bw, m_bh);
   buttonIncrementSelectedDice.style('font-size', '16px');
   buttonIncrementSelectedDice.style('background-color', "#F0F0F0")
   buttonIncrementSelectedDice.mousePressed(incrementSelectedDice);
+  m_allButtons.push(new Button(buttonIncrementSelectedDice, 4*m_bw, 825, m_bw, m_bh));
 
   m_buttonsDifficulty[0] = createNormalButton("D-1", 7*m_bw, 750, m_bw/2, m_bh/2);
   m_buttonsDifficulty[0].style('font-size', '16px');
@@ -350,6 +366,8 @@ function setup() {
       addSummonsCards();
       update();
     });
+  m_allButtons.push(new Button(m_buttonsDifficulty[0], 7*m_bw, 750, m_bw/2, m_bh/2));
+
   m_buttonsDifficulty[1] = createNormalButton("D-2", 7*m_bw+m_bw/2, 750, m_bw/2, m_bh/2);
   m_buttonsDifficulty[1].style('font-size', '16px');
   m_buttonsDifficulty[1].style('background-color', "#F0F0F0")
@@ -358,6 +376,8 @@ function setup() {
       addSummonsCards();
       update();
     });
+  m_allButtons.push(new Button(m_buttonsDifficulty[1], 7*m_bw+m_bw/2, 750, m_bw/2, m_bh/2));
+
   m_buttonsDifficulty[2] = createNormalButton("D-3", 7*m_bw, 750+m_bh/2, m_bw/2, m_bh/2);
   m_buttonsDifficulty[2].style('font-size', '16px');
   m_buttonsDifficulty[2].style('background-color', "#F0F0F0")
@@ -366,6 +386,8 @@ function setup() {
       addSummonsCards();
       update();
     });
+  m_allButtons.push(new Button(m_buttonsDifficulty[2], 7*m_bw, 750+m_bh/2, m_bw/2, m_bh/2));
+
   m_buttonsDifficulty[3] = createNormalButton("D-4", 7*m_bw+m_bw/2, 750+m_bh/2, m_bw/2, m_bh/2);
   m_buttonsDifficulty[3].style('font-size', '16px');
   m_buttonsDifficulty[3].style('background-color', "#F0F0F0")
@@ -374,16 +396,19 @@ function setup() {
       addSummonsCards();
       update();
     });
+  m_allButtons.push(new Button(m_buttonsDifficulty[3], 7*m_bw+m_bw/2, 750+m_bh/2, m_bw/2, m_bh/2));
 
   let buttonCampCheckMap = createNormalButton("Camp Check Map", 8*m_bw, 750, m_bw, m_bh);
   buttonCampCheckMap.style('font-size', '16px');
   buttonCampCheckMap.style('background-color', "#F0F0F0")
   buttonCampCheckMap.mousePressed(campCheckMap);
+  m_allButtons.push(new Button(buttonCampCheckMap, 8*m_bw, 750, m_bw, m_bh));
 
   let buttonCampTeleport = createNormalButton("Camp Wizard Teleport", 8*m_bw, 825, m_bw, m_bh);
   buttonCampTeleport.style('font-size', '16px');
   buttonCampTeleport.style('background-color', "#F0F0F0")
   buttonCampTeleport.mousePressed(campWizardTeleport);
+  m_allButtons.push(new Button(buttonCampTeleport, 8*m_bw, 825, m_bw, m_bh));
 
   ///////////////////////////////////////////////
   // Controls for individual decks
@@ -418,10 +443,14 @@ function setup() {
     b3.mousePressed(function() {
       if (m_players[i].campCounter < 2) m_players[i].campCounter++;
     });
+    m_allButtons.push(new Button(b3, width-m_bs, 225*i + 10, m_bs, m_bs));
+
+
     let b4 = createNormalButton('⬇', width-m_bs, 225*i + 40, m_bs, m_bs);
     b4.mousePressed(function() {
       if (m_players[i].campCounter > 0) m_players[i].campCounter--;
     });
+    m_allButtons.push(new Button(b4, width-m_bs, 225*i + 40, m_bs, m_bs));
   }
 
   ////////////////////////////////////////////
@@ -436,6 +465,7 @@ function setup() {
       if (m_firewood > 0) m_firewood--;
       update();
     });
+  m_allButtons.push(new Button(buttonDecrementFirewood, fireX-75, fireY-m_bs, m_bs, m_bs));
 
   let buttonIncrementFirewood = createNormalButton("+", fireX+75-m_bs/2, fireY-m_bs, m_bs, m_bs);
   buttonIncrementFirewood.style('font-size', '16px');
@@ -444,6 +474,7 @@ function setup() {
       if (m_firewood < 15) m_firewood++;
       update();
     });
+  m_allButtons.push(new Button(buttonIncrementFirewood, fireX+75-m_bs/2, fireY-m_bs, m_bs, m_bs));
 
 
   ///////////////////////////////////////////////
@@ -567,6 +598,7 @@ function addSummonsCards() {
 function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true, doSpread=true, doTop=true, doBottom=true) {
   if (doDeal) {
     let monstDeal = createNormalButton('Deal', x, y+ch/2-m_bs, m_bs, m_bs);
+    m_allButtons.push(new Button(monstDeal, x, y+ch/2-m_bs, m_bs, m_bs));
     monstDeal.style('padding', '0px 0px'); 
     monstDeal.style('background-color', "#F0F0F0")
     monstDeal.mousePressed(function(){
@@ -577,6 +609,7 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
 
   if (doSpread) {
     let monstSpread = createNormalButton('Sprd', x, y+ch/2, m_bs, m_bs);
+    m_allButtons.push(new Button(monstSpread, x, y+ch/2, m_bs, m_bs));
     monstSpread.style('padding', '0px 0px'); 
     monstSpread.style('background-color', "#F0F0F0")
     monstSpread.mousePressed(function(){
@@ -594,6 +627,7 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
   
   if (doTop) {
     let monstTop = createNormalButton('Top', x+cw-m_bs, y+ch/2-m_bs, m_bs, m_bs);
+    m_allButtons.push(new Button(monstTop, x+cw-m_bs, y+ch/2-m_bs, m_bs, m_bs));
     monstTop.style('padding', '0px 0px'); 
     monstTop.style('background-color', "#F0F0F0")
     monstTop.mousePressed(function(){
@@ -618,6 +652,7 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
   
   if (doBottom) {
     let monstBot = createNormalButton('Bot', x+cw-m_bs, y+ch/2, m_bs, m_bs);
+    m_allButtons.push(new Button(monstBot, x+cw-m_bs, y+ch/2, m_bs, m_bs));
     monstBot.style('padding', '0px 0px'); 
     monstBot.style('background-color', "#F0F0F0")
     monstBot.mousePressed(function(){
@@ -664,6 +699,18 @@ function initPlayerToServer() {
 function update() {
   if (m_initialized) {
     let msg = m_messageP.html();
+    // set some data to unscaled coordinates so that everyone can scale
+    // them as needed when getting data from the server
+    for (p of m_players) {
+      for (d of p.dice) {
+        d.unscaledX = d.x / m_s;
+        d.unscaledY = d.y / m_s;
+      }
+    }
+    for (d of m_decks) {
+      d.unscaledCw = d.cw / m_s;
+      d.unscaledCh = d.ch / m_s;
+    }
     // console.log('msg = ' + msg)
     let data = {
       players: m_players,
@@ -765,9 +812,10 @@ function findCardUnderCursor() {
 }
 
 function mousePressed() {
-  console.log('mousePressed ', mouseX, mouseY);
+
   // Don't pay attention to presses in the control area
-  if (mouseX > 0 && mouseX < m_cw*8 && mouseY > 750) return;
+  if (mouseX > 0 && mouseX < m_cw*8 && mouseY > height-m_ch) return;
+  console.log('mousePressed ', mouseX, mouseY);
 
   ////////////////////////////////////////
   // Dice
@@ -832,8 +880,13 @@ function mousePressed() {
   let foundCard = findCardUnderCursor();
 
   // You can't select other plays cards unless it is open season or you have the same name
-  if (foundCard && !m_isOpenSeason && foundCard.deckIndex <= DECK_WIZARD && m_thisPlayer.class != foundCard.deckIndex &&
-      m_thisPlayer.name != m_players[foundCard.deckIndex].name) foundCard = null;
+  if (foundCard) {
+    let playerIndex = getPlayerIndexFromDeckIndex(foundCard.deckIndex);
+    if (!m_isOpenSeason && foundCard.deckIndex <= DECK_WIZARD && m_thisPlayer.class != foundCard.deckIndex &&
+      m_thisPlayer.name != m_players[playerIndex].name) foundCard = null;
+  }
+  // if (foundCard && !m_isOpenSeason && foundCard.deckIndex <= DECK_WIZARD && m_thisPlayer.class != foundCard.deckIndex &&
+  //     m_thisPlayer.name != m_players[foundCard.deckIndex].name) foundCard = null;
 
   if (foundCard) foundCard.selected = !foundCard.selected;
 
@@ -874,7 +927,7 @@ function mouseReleased() {
     console.log('mouseReleased m_selectedDieInfo = ' , m_selectedDieInfo);
     let x = m_selectedDieInfo.x;
     let y = m_selectedDieInfo.y;
-    if (x > 0 && x < m_cw*8 && y > 750-m_dieSize) y = 750-m_dieSize;
+    if (x > 0 && x < m_cw*8 && y > height-m_ch-m_dieSize) y = height-m_ch-m_dieSize;
     // m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].x = m_selectedDieInfo.x;
     // m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].y = m_selectedDieInfo.y;
     m_players[m_selectedDieInfo.playerNum].dice[m_selectedDieInfo.dieIndex].x = x;
@@ -1162,6 +1215,7 @@ function draw() {
   m_mySocketId = '/#' + m_socket.id;
 
   background(220);
+  image(m_tableBackgroundImage, 0, 0, width, height);
   stroke(0);
   noFill();
   // for (let player of m_players) {
@@ -1223,7 +1277,7 @@ function drawBoard() {
   noFill();
 
   // camp image
-  image(m_campImage, 0, m_cw);
+  image(m_campImage, 0, m_cw, 687*m_s, 341*m_s);
 
   ////////////////////////////
   // Players - must be drawn before decks in case any of them are 'spread'
@@ -1249,33 +1303,33 @@ function drawBoard() {
   // JMU this could possibly be put in a function can then called once per deck
   // Hoard
   stroke(0); noFill(); strokeWeight(1);
-  rect(700, 25, m_cw, m_ch);
-  m_decks[DECK_HORDE].show(700, 25, 0, 0);
+  rect(700*m_s, 25*m_s, m_cw, m_ch);
+  m_decks[DECK_HORDE].show(700*m_s, 25*m_s, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
   // text("HOARD "+m_decks[DECK_HORDE].cards.length, 700, m_ch/2)
-  text("HOARD "+m_decks[DECK_HORDE].cards.length, 700, 20)
+  text("HOARD: "+m_decks[DECK_HORDE].cards.length, 700*m_s, 20*m_s)
 
   // Monsters
   stroke(0); noFill(); strokeWeight(1);
-  rect(700+m_cw, 25, m_cw, m_ch);
-  m_decks[DECK_MONSTERS].show(700+m_cw, 25, 0, 0);
+  rect(700*m_s+m_cw, 25*m_s, m_cw, m_ch);
+  m_decks[DECK_MONSTERS].show(700*m_s+m_cw, 25*m_s, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("CREAT "+m_decks[DECK_MONSTERS].cards.length, 700+m_cw, 20)
+  text("CREAT: "+m_decks[DECK_MONSTERS].cards.length, 700*m_s+m_cw, 20*m_s)
 
   // Unhallowed
   stroke(0); noFill(); strokeWeight(1);
-  rect(700, m_ch + 50, m_cw, m_ch);
-  m_decks[DECK_UNHALLOWED].show(700, m_ch + 50, 0, 0);
+  rect(700*m_s, m_ch + 50*m_s, m_cw, m_ch);
+  m_decks[DECK_UNHALLOWED].show(700*m_s, m_ch + 50*m_s, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
   // text("UNHALL " + m_decks[DECK_UNHALLOWED].cards.length, 700, 3*m_ch/2)
-  text("UNHALL " + m_decks[DECK_UNHALLOWED].cards.length, 700, m_ch + 45)
+  text("UNHALL: " + m_decks[DECK_UNHALLOWED].cards.length, 700*m_s, m_ch + 45*m_s)
 
   // Graveyard
   stroke(0); noFill(); strokeWeight(1);
-  rect(700+m_cw, m_ch + 50, m_cw, m_ch);
-  m_decks[DECK_GRAVEYARD].show(700+m_cw, m_ch + 50, 0, 0);
+  rect(700*m_s+m_cw, m_ch + 50*m_s, m_cw, m_ch);
+  m_decks[DECK_GRAVEYARD].show(700*m_s+m_cw, m_ch + 50*m_s, 0, 0);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("GRAVE " +m_decks[DECK_GRAVEYARD].cards.length, 700+m_cw, m_ch + 45)
+  text("GRAVE: " +m_decks[DECK_GRAVEYARD].cards.length, 700*m_s+m_cw, m_ch + 45*m_s)
 
   // // player 1 cards
   // for (let i = 0; i < 5; i++) {
@@ -1289,38 +1343,38 @@ function drawBoard() {
   for (let i = 0; i < 6; i++) rect(width-((5+1)*m_cw), i*m_ch, m_cw, m_ch);
   m_decks[DECK_GENERIC].show(946, 0, 0, m_ch);
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("GENERAL "+m_decks[DECK_GENERIC].cards.length, width-((5+1)*m_cw), 25); //m_ch/2)
+  text("GENERAL: "+m_decks[DECK_GENERIC].cards.length, width-((5+1)*m_cw), 20*m_s); //m_ch/2)
 
   // The Line
   noFill();
   for (let i = 0; i < 8; i++) {
-    rect(0+i*m_cw, 450, m_cw, m_ch);
-    rect(0+i*m_cw, 450+m_ch, m_cw, m_ch);
+    rect(0+i*m_cw, 450*m_s, m_cw, m_ch);
+    rect(0+i*m_cw, 450*m_s+m_ch, m_cw, m_ch);
   }
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("LINE", 0, 450+m_ch/2)
+  text("LINE: ", 0, 450*m_s+m_ch/2)
   stroke(0); noFill(); strokeWeight(1);
   // rect(700+m_cw, m_ch, m_cw, m_ch);
-  m_decks[DECK_LINE].show(0, 450, 1, 0, 8);
+  m_decks[DECK_LINE].show(0, 450*m_s, 1, 0, 8);
 
   // the buttons on the bottom
   stroke(0); noFill(); strokeWeight(1);
   for (let i = 0; i < 9; i++) {
-    rect(0+i*m_bw, 750, m_bw, m_bh);
-    rect(0+i*m_bw, 750+m_bh, m_bw, m_bh);
+    rect(0+i*m_bw, 750*m_s, m_bw, m_bh);
+    rect(0+i*m_bw, 750*m_s+m_bh, m_bw, m_bh);
   }
 
   // fire text indicator
-  let fireX = 687/2;
-  let fireY = 109 + (341/2);
+  let fireX = (687/2)*m_s;
+  let fireY = (109 + (341/2))*m_s;
   let numReveal = 0;
   if (m_firewood < 7) numReveal = 1;
   else if (m_firewood < 12) numReveal = 2;
   else numReveal = 3;
   stroke(255, 255, 0); fill(255, 0, 0); strokeWeight(1); textSize(32);
-  text(m_firewood + '(' + numReveal + ')', fireX-25, fireY);
+  text(m_firewood + '(' + numReveal + ')', fireX-25*m_s, fireY);
   // fire circle indicator
-  circle(m_fireX[m_firewood], m_fireY[m_firewood], 26);
+  circle(m_fireX[m_firewood]*m_s, m_fireY[m_firewood]*m_s, 26*m_s);
   
 
   // If there is anything in the temporary location deck, draw it
@@ -1358,8 +1412,8 @@ function checkCardHover() {
 function checkCampAbilityHover() {
   let ability = -1;
   for (let i = 0; i < m_players.length; i++) {
-    let minX = 1150,       maxX = minX+100;
-    let minY = 5 + 225*i, maxY = minY + 25
+    let minX = 1150*m_s,       maxX = (minX+100)*m_s;
+    let minY = (5 + 225*i)*m_s, maxY = (minY + 25)*m_s;
     if (mouseX >= minX && mouseX <= maxX && mouseY >= minY && mouseY <= maxY)  ability = i;
   }
 
@@ -1377,5 +1431,83 @@ function checkCampAbilityHover() {
   } else {
     m_playerClassNameParagraph.hide();
     m_playerClassNameParagraph.html("");
+  }
+}
+
+function windowResized() {
+  if (windowWidth >= 1600 && windowHeight>= 900) {
+    let oldms = m_s;
+    let newW, newH;
+    let xScale = windowWidth/1600;
+    let yScale = windowHeight/900;
+    if (xScale <= yScale) {
+      newW = windowWidth;
+      newH = windowWidth*(900/1600);
+      m_s = windowWidth/1600;
+    } else {
+      newH = windowHeight;
+      newW = windowHeight*(1600/900);
+      m_s = windowHeight/900;
+    }
+
+    // we have to move dice manually, because they have  x,y positions
+    // set by moving them, which is not based on 1600x900.  We have to remove the old
+    // scale factor and then apply the new scale factor
+    for (let p of m_players) {
+      for (let d of p.dice) {
+        d.x /= oldms;
+        d.y /= oldms;
+        d.x *= m_s;
+        d.y *= m_s;
+      }
+    }
+
+    // We have to change the deck's card width and card height.  The x and y are
+    // calculated at draw time so they should be ok
+    for (deck of m_decks) {
+      deck.cw = deck.cw / oldms * m_s;
+      deck.ch = deck.ch / oldms * m_s;
+    }
+
+    // // We have to reposition and resize all the buttons.
+    // This does not work because the x, y, w, h are integers and I lose precision as I resize
+    // for (let b of m_allButtons) {
+    //   let sz = b.size();
+    //   console.log('size: ', sz);
+    //   let w = sz.width / oldms * m_s;
+    //   let h = sz.height / oldms * m_s;
+    //   b.size(w, h);
+    //   // b.style('width',  w+'px');
+    //   // b.style('height', h+'px');
+    //   let pos = b.position();
+    //   console.log('pos: ', pos);
+    //   b.position(pos.x / oldms * m_s, pos.y / oldms * m_s);
+    // }
+
+    for (let b of m_allButtons) {
+      b.btn.size(b.w * m_s, b.h * m_s);
+      b.btn.position(b.x * m_s, b.y * m_s);
+    }
+
+    // A few remaining variables
+    m_cw = m_cw / oldms * m_s;
+    m_ch = m_ch / oldms * m_s;
+    m_bw = m_bw / oldms * m_s;
+    m_bh = m_bh / oldms * m_s;
+
+    resizeCanvas(newW, newH);
+  }
+}
+
+// I need a separate class that stores all the original informaiton.  I tried using the
+// button's stats (x, y, w, h) from button.size() and button.position(), but those are
+// integers and I quickly lose precision as I resize the window
+class Button {
+  constructor(btn, x, y, w, h) {
+    this.btn = btn;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
   }
 }

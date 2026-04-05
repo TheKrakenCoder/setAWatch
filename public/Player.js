@@ -23,33 +23,32 @@ class Player {
   showNoDice() {
     // underlying rect
     fill(m_playerBackgroundColors[this.class]); noStroke();
-    rect(1055, 225*this.seatPos, width-1055, 75);
+    rect(1055*m_s, 225*this.seatPos*m_s, width-1055*m_s, 75*m_s);
 
-    // name
+    // name, class, melee/ranged
     stroke(0); noFill(); textSize(16);
-    text(this.name, 1055, 20 + 225*this.seatPos)
-    text(m_classNames[this.class], 1055, 40 + 225*this.seatPos)
+    text(this.name, 1055*m_s, (20 + 225*this.seatPos)*m_s)
+    text(m_classNames[this.class], 1055*m_s, (40 + 225*this.seatPos)*m_s)
     let rng = (m_isRangedClass[this.class] == 1) ? "Ranged" : "Melee";
-    text(rng, 1055, 60 + 225*this.seatPos);
-    text(m_classCamp[this.class], 1150, 25 + 225*this.seatPos)
+    text(rng, 1055*m_s, (60 + 225*this.seatPos)*m_s);
+    text(m_classCamp[this.class], 1150*m_s, (25 + 225*this.seatPos)*m_s)
 
     // camp counter
     fill(255);
-    circle(width-50, 225*this.seatPos + 75/2, 30);
+    circle(width-50*m_s, (225*this.seatPos + 75/2)*m_s, 30);
     fill(0);
-    text(this.campCounter, width-50-5, 225*this.seatPos + 75/2 + 5 );
+    text(this.campCounter, width+(-50-5)*m_s, (225*this.seatPos + 75/2 + 5)*m_s );
 
     // deck
     let deck = m_decks[this.class];
-    let xstart = 1055;
-    let ystart = 0 + 225*this.seatPos + m_ch/2;
+    let xstart = 1055*m_s;
+    let ystart = (0 + 225*this.seatPos)*m_s + m_ch/2;
     let xmult = 1;  // 1 card width
     deck.show(xstart, ystart, xmult, 0);
 
     // separator line after first 3 cards
     stroke(m_dieColors[this.class]); fill(m_dieColors[this.class]);
-    // line(1055+3*m_cw - 3, 75+225*this.seatPos, 1055+3*m_cw, 75+225*this.seatPos+m_ch);
-    rect(1055+3*m_cw, 75+225*this.seatPos, 7, m_ch);
+    rect(1055*m_s+3*deck.cw, (75+225*this.seatPos)*m_s, 7, m_ch);
   }
 
   showDice() {

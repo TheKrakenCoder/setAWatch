@@ -7,6 +7,8 @@ class Deck {
     this.backIndex = backIndex;  // index into m_backImages
     this.cw = cw;     // card width of cards in this deck
     this.ch = ch;     // card height of cards in this deck
+    this.unscaledCw = cw;     // card width of cards in this deck
+    this.unscaledCh = ch;     // card height of cards in this deck
     this.isSpread = false;  // should we draw this stack spread out (for a deck normally drawn vertically)
     this.cards = [];  // Card objects
     // this.shuffle();
@@ -153,8 +155,12 @@ class Deck {
     this.deckIndex = data.deckIndex;
     this.setIndex = data.setIndex;
     this.backIndex = data.backIndex;
-    this.cw = data.cw;
-    this.ch = data.ch;
+    this.cw = data.unscaledCw * m_s;
+    this.ch = data.unscaledCh * m_s;
+    // this.cw = data.cw;
+    // this.ch = data.ch;
+    this.unscaledCw = data.unscaledCw;
+    this.unscaledCh = data.unscaledCh;
     this.isSpread = data.isSpread;
     if (data.cards) {
       this.cards = [];

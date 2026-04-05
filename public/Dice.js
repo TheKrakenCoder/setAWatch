@@ -3,6 +3,8 @@ class Dice {
     this.maxValue = maxVal;
     this.x = x;  // upper left of square/triangle
     this.y = y;
+    this.unscaledX = x;  // upper left of square/triangle
+    this.unscaledY = y;
     this.color = color;
     this.curValue = 0;
     this.selected = false;
@@ -38,9 +40,14 @@ class Dice {
   // Passing the seatPos allows us to calculate the y properly (assuming it is incorrect)
   copyFromServerData(data, seatPos) {
     this.maxValue = data.maxValue;
-    this.x = data.x;
-    if (data.y >= 0) this.y = data.y;
-    else             this.y = 35+225*seatPos;
+    this.x = data.unscaledX*m_s;
+    if (data.y >= 0) this.y = data.unscaledY*m_s;
+    else             this.y = (35+225*seatPos)*m_s;
+    this.unscaledX = data.unscaledX;  // unneeded after being used above
+    this.unscaledY = data.unscaledY;
+    // this.x = data.x*m_s;
+    // if (data.y >= 0) this.y = data.y*m_s;
+    // else             this.y = (35+225*seatPos)*m_s;
     this.color = data.color;
     this.curValue = data.curValue;
     this.selected = data.selected;
