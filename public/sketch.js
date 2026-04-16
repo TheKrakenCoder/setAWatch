@@ -40,6 +40,8 @@ var m_cardBackImages = [];
 let m_tableBackgroundImage;
 // Message from server
 var m_messageP;
+var m_qrImageElement;
+var m_qrShowing = false;
 var m_oldMessage = "&nbsp";
 var m_colorNum = 0;
 var m_colors = ['#000000', '#FF0000', '#55AA55', '#0000FF'];
@@ -51,7 +53,7 @@ let m_spreadingToppingOrBottoming = false;  // when we click these buttons on a 
 const m_dieSizes = [8, 6, 8, 6, 8, 6];      // beats master thru wizard
 const m_dieColors = ['blue', 'red', 'green', 'orange', 'purple', 'yellow'];
 const m_playerBackgroundColors = ['lightblue', '#FF7F7F', 'lightgreen', '#FBBF77', '#A875D9', 'lightyellow'];
-const m_isRangedClass = [1, 1, 1, 0, 0, 0];
+const m_isRangedClass = [1, 1, 1, 0, 0, 1];
 const m_dieSize = 40;
 let m_selectedDieInfo = {};
 let m_didDragDie = false;
@@ -75,6 +77,7 @@ const BACK_CREATURE = 0, BACK_LOCATION = 1, BACK_GENERIC = 2;
 
 function preload() {
   m_tableBackgroundImage = loadImage('Assets/TableBackground.jpg');
+  
   m_campImage = loadImage('Assets/GameBoardCamp.jpg');
   let img = loadImage('Assets/cardBackTemp.jpg');
   m_cardBackImages[BACK_GENERIC] = img;
@@ -107,6 +110,7 @@ function preload() {
 
 function setup() {
   createCanvas(1600, 900);
+  // windowResized();
   angleMode(DEGREES);
 
   m_playerClassNameParagraph = createP();
@@ -328,6 +332,25 @@ function setup() {
   buttonRemove.mousePressed(removeSelectedCardFromGame);
   m_allButtons.push(new Button(buttonRemove, 5*m_bw, 750, m_bw, m_bh));
 
+  let buttonSelectGrave = createNormalButton("Select All Graveyard Cards", 6*m_bw, 750, m_bw, m_bh);
+  buttonSelectGrave.style('font-size', '16px');
+  buttonSelectGrave.style('background-color', "#F0F0F0")
+  buttonSelectGrave.mousePressed(selectAllGraveyardCards);
+  m_allButtons.push(new Button(buttonSelectGrave, 6*m_bw, 750, m_bw, m_bh));
+
+  let buttonTapped = createNormalButton("(Un)Tap Cards", 7*m_bw, 750, m_bw, m_bh);
+  buttonTapped.style('font-size', '16px');
+  buttonTapped.style('background-color', "#F0F0F0")
+  buttonTapped.mousePressed(tappedToggleCards);
+  m_allButtons.push(new Button(buttonTapped, 7*m_bw, 750, m_bw, m_bh));
+
+
+  // let buttonSelectDeck = createNormalButton("Select Deck of Selected Card", 6*m_bw, 750, m_bw, m_bh);
+  // buttonSelectDeck.style('font-size', '16px');
+  // buttonSelectDeck.style('background-color', "#F0F0F0")
+  // buttonSelectDeck.mousePressed(selectDeckOfSelectedCard);
+  // m_allButtons.push(new Button(buttonSelectDeck, 6*m_bw, 750, m_bw, m_bh));
+
   m_buttonOpenSeason = createNormalButton("Open Season", 0*m_bw, 825, m_bw, m_bh);
   m_buttonOpenSeason.style('font-size', '16px');
   m_buttonOpenSeason.style('background-color', "#FF0000")
@@ -358,7 +381,17 @@ function setup() {
   buttonIncrementSelectedDice.mousePressed(incrementSelectedDice);
   m_allButtons.push(new Button(buttonIncrementSelectedDice, 4*m_bw, 825, m_bw, m_bh));
 
-  m_buttonsDifficulty[0] = createNormalButton("D-1", 7*m_bw, 750, m_bw/2, m_bh/2);
+  let showQuickReference = createNormalButton("QR", 6*m_bw, 825, m_bw, m_bh);
+  showQuickReference.style('font-size', '16px');
+  showQuickReference.style('background-color', "#F0F0F0")
+  showQuickReference.mousePressed(function(){
+      if (m_qrShowing) m_qrImageElement.hide();
+      else             m_qrImageElement.show();
+      m_qrShowing = !m_qrShowing;
+    });
+  m_allButtons.push(new Button(showQuickReference, 6*m_bw, 825, m_bw, m_bh));
+
+    m_buttonsDifficulty[0] = createNormalButton("D-1", 7*m_bw, 825, m_bw/2, m_bh/2);
   m_buttonsDifficulty[0].style('font-size', '16px');
   m_buttonsDifficulty[0].style('background-color', "#F0F0F0")
   m_buttonsDifficulty[0].mousePressed(function(){
@@ -366,9 +399,9 @@ function setup() {
       addSummonsCards();
       update();
     });
-  m_allButtons.push(new Button(m_buttonsDifficulty[0], 7*m_bw, 750, m_bw/2, m_bh/2));
+  m_allButtons.push(new Button(m_buttonsDifficulty[0], 7*m_bw, 825, m_bw/2, m_bh/2));
 
-  m_buttonsDifficulty[1] = createNormalButton("D-2", 7*m_bw+m_bw/2, 750, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[1] = createNormalButton("D-2", 7*m_bw+m_bw/2, 825, m_bw/2, m_bh/2);
   m_buttonsDifficulty[1].style('font-size', '16px');
   m_buttonsDifficulty[1].style('background-color', "#F0F0F0")
   m_buttonsDifficulty[1].mousePressed(function(){
@@ -376,9 +409,9 @@ function setup() {
       addSummonsCards();
       update();
     });
-  m_allButtons.push(new Button(m_buttonsDifficulty[1], 7*m_bw+m_bw/2, 750, m_bw/2, m_bh/2));
+  m_allButtons.push(new Button(m_buttonsDifficulty[1], 7*m_bw+m_bw/2, 825, m_bw/2, m_bh/2));
 
-  m_buttonsDifficulty[2] = createNormalButton("D-3", 7*m_bw, 750+m_bh/2, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[2] = createNormalButton("D-3", 7*m_bw, 825+m_bh/2, m_bw/2, m_bh/2);
   m_buttonsDifficulty[2].style('font-size', '16px');
   m_buttonsDifficulty[2].style('background-color', "#F0F0F0")
   m_buttonsDifficulty[2].mousePressed(function(){
@@ -386,9 +419,9 @@ function setup() {
       addSummonsCards();
       update();
     });
-  m_allButtons.push(new Button(m_buttonsDifficulty[2], 7*m_bw, 750+m_bh/2, m_bw/2, m_bh/2));
+  m_allButtons.push(new Button(m_buttonsDifficulty[2], 7*m_bw, 825+m_bh/2, m_bw/2, m_bh/2));
 
-  m_buttonsDifficulty[3] = createNormalButton("D-4", 7*m_bw+m_bw/2, 750+m_bh/2, m_bw/2, m_bh/2);
+  m_buttonsDifficulty[3] = createNormalButton("D-4", 7*m_bw+m_bw/2, 825+m_bh/2, m_bw/2, m_bh/2);
   m_buttonsDifficulty[3].style('font-size', '16px');
   m_buttonsDifficulty[3].style('background-color', "#F0F0F0")
   m_buttonsDifficulty[3].mousePressed(function(){
@@ -396,7 +429,7 @@ function setup() {
       addSummonsCards();
       update();
     });
-  m_allButtons.push(new Button(m_buttonsDifficulty[3], 7*m_bw+m_bw/2, 750+m_bh/2, m_bw/2, m_bh/2));
+  m_allButtons.push(new Button(m_buttonsDifficulty[3], 7*m_bw+m_bw/2, 825+m_bh/2, m_bw/2, m_bh/2));
 
   let buttonCampCheckMap = createNormalButton("Camp Check Map", 8*m_bw, 750, m_bw, m_bh);
   buttonCampCheckMap.style('font-size', '16px');
@@ -539,7 +572,10 @@ function setup() {
     // // createCardArrayFromServerData(data.discards, m_discards);
   });
 
-  // update();
+  // windowResized();
+  m_qrImageElement = createImg('Assets/QuickReference.jpg');
+  m_qrImageElement.size(1200, 675);
+  if (!m_qrShowing) m_qrImageElement.hide();
 
 }  // setup()
 
@@ -913,6 +949,7 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+
   console.log('mouseReleased');
   // If we didn't drag the card at all, we just want to select it, so 
   // nothing more needs to be done.
@@ -1027,6 +1064,14 @@ function exhaustToggleCards() {
 
   if (cards.length > 0) update();
 }
+function tappedToggleCards() {
+  let cards = findSelectedCards();
+  for (let i = 0; i < cards.length; i++) {
+    cards[i].tapped = !cards[i].tapped;
+  }
+
+  if (cards.length > 0) update();
+}
 
 function shiftLeft() {
   console.log('shiftLeft');
@@ -1115,6 +1160,28 @@ function removeSelectedCardFromGame() {
   update();
 }
 
+function selectAllGraveyardCards() {
+  for (let i = 0; i < m_decks[DECK_GRAVEYARD].cards.length; i++) {
+    m_decks[DECK_GRAVEYARD].cards[i].selected = true;
+  }
+  update();
+}
+
+// This function is currently unused.  It is a more generic version of selectAllGraveyardCards()
+function selectDeckOfSelectedCard() {
+  let cards = findSelectedCards();
+  if (cards.length != 1) {
+    m_messageP.html('You must selected exactly 1 card');
+    update();
+    return;
+  }
+  let deckIndex = cards[0].deckIndex;
+  for (let i = 0; i < m_decks[deckIndex].cards.length; i++) {
+    m_decks[deckIndex].cards[i].selected = true;
+  }
+  update();
+}
+
 function toggleOpenSeason() {
   m_isOpenSeason = !m_isOpenSeason;
   update();
@@ -1130,6 +1197,12 @@ function rollAllDice() {
       die.x = 1150+m_dieSize*d;
       die.y = 35+225*p.seatPos
       die.selected = false;
+    }
+  }
+  // this is a new round so untap all the cards
+  for (deck of m_decks) {
+    for (card of deck.cards) {
+      card.tapped = false;
     }
   }
   update();
@@ -1331,6 +1404,18 @@ function drawBoard() {
   stroke(0); fill(0); strokeWeight(1); textSize(16);
   text("GRAVE: " +m_decks[DECK_GRAVEYARD].cards.length, 700*m_s+m_cw, m_ch + 45*m_s)
 
+  // If all the cards in the graveyard are selected indicate this.  Tihs could be done much more
+  // generically by having this check in the Deck's show() method, abd then doing something about
+  // it after the cards are drawn or by passing something to the Card's show().
+  // Having it here is simpler
+  let isAllGraveyardSelected = true;
+  for (let card of m_decks[DECK_GRAVEYARD].cards) if (!card.selected) isAllGraveyardSelected = false;
+  if (isAllGraveyardSelected && m_decks[DECK_GRAVEYARD].cards.length > 1) {
+    stroke(0, 0, 255); noFill(); strokeWeight(4);
+    rect(700*m_s+m_cw - 2, m_ch + 50*m_s - 2, m_cw, m_ch);
+  }
+
+
   // // player 1 cards
   // for (let i = 0; i < 5; i++) {
   //   rect(width-((i+1)*m_cw), 75, m_cw, m_ch);
@@ -1385,10 +1470,11 @@ function drawBoard() {
   // the size of the temp location deck is greater than 0 (which means we are drawing it)
   let didSpread = false;
   for (let i = 0; i < m_decks.length; i++) if (m_decks[i].isSpread && i != DECK_TEMP_LOCS) didSpread = true;
-  if (!didSpread || m_decks[DECK_TEMP_LOCS].length > 0) {
+  if (!didSpread && m_decks[DECK_TEMP_LOCS].cards.length == 0) {
     stroke(0); noFill(); strokeWeight(1);
     for (player of m_players) player.showDice();
   }
+
 
 }  // drawBoard()
 

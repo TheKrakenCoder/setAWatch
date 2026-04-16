@@ -6,6 +6,7 @@ class Card {
     this.x = 0;
     this.y = 0;
     this.exhausted = false;
+    this.tapped = false;
     this.facedown = true;
     this.selected = false;
   }
@@ -28,6 +29,14 @@ class Card {
       if (this.exhausted) {
         fill(255, 0, 0);
         circle(this.x + deck.cw/2, this.y + deck.ch/4, deck.cw*0.5);
+      }
+      if (this.tapped) {
+        textAlign(CENTER);
+        stroke(255); fill(0, 0, 255); textSize(48);
+        text("T", this.x + deck.cw/2, this.y + deck.ch/3)
+        textAlign(LEFT);
+        // fill(255, 0, 0);
+        // circle(this.x + deck.cw/2, this.y + deck.ch/4, deck.cw*0.5);
       }
     }
 
@@ -65,6 +74,7 @@ class Card {
     this.x = data.x;
     this.y = data.y;
     this.exhausted = data.exhausted;
+    this.tapped = data.tapped;
     this.facedown = data.facedown;
     this.selected = data.selected;
   }

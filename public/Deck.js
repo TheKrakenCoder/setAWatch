@@ -104,11 +104,13 @@ class Deck {
     if (this.isSpread) {
       // draw a rect over the player stuff
       noStroke();  fill(100, 200);
-      rect(946, 0, width-946, height);
-      xwrap = floor((width-1055)/this.cw) + 1;
+      rect(946*m_s, 0, width-946*m_s, height);
+      xwrap = floor((width-946*m_s)/(this.cw*m_s)) + 1;
+      // rect(946*m_s, 0, (width-946)*m_s, height);
+      // xwrap = floor(((width-1055)/this.cw)*m_s) + 1;
       // console.log('xwrap = ' , xwrap);
       
-      xstart = 946; ystart = 0; xmult = 1; ymult = 0;
+      xstart = 946*m_s; ystart = 0; xmult = 1; ymult = 0;
     }
     let xdelta = xmult * this.cw;
     let ydelta = ymult * this.ch;
