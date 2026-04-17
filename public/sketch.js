@@ -650,8 +650,8 @@ function createDeckButtons(deckIndex, deckDealToIndex, x, y, cw, ch, doDeal=true
     monstSpread.style('background-color', "#F0F0F0")
     monstSpread.mousePressed(function(){
       m_decks[deckIndex].isSpread = !m_decks[deckIndex].isSpread;
-      if (m_decks[deckIndex].isSpread) monstSpread.style('background-color', "#00F000");
-      else                             monstSpread.style('background-color', "#F0F0F0")
+      // if (m_decks[deckIndex].isSpread) monstSpread.style('background-color', "#00F000");
+      // else                             monstSpread.style('background-color', "#F0F0F0")
       // unselect the top card of the deck which got selected when we clicked on Spread.
       // This doesn't work because the mousePressed() is called after this function
       // m_decks[deckIndex].cards.at(-1).selected = false;
@@ -1342,6 +1342,11 @@ function debugDrawDeck(deckIdx) {
   }
 }
 
+function setDeckNameColor(deckIndex) {
+  if (m_decks[deckIndex].isSpread) stroke(0, 255, 0);
+  else                             stroke(0);
+}
+
 function drawBoard() {
   if (!m_initialized) return;
   if (m_decks.length == 0) return;
@@ -1362,15 +1367,16 @@ function drawBoard() {
   m_decks[DECK_CUR_LOCS].show(2*m_ch, 0, 0, 0);
   stroke(0); noFill(); strokeWeight(1.5);
   rect(0, 0, m_ch, m_cw);
-  // stroke(0); //fill(0); strokeWeight(2);
-  text('UNUSED: ' + m_decks[DECK_UNUSED_LOCS].cards.length, 0, 25); // m_cw/2);
-  // stroke(0); noFill(); strokeWeight(1);
+  setDeckNameColor(DECK_UNUSED_LOCS);
+  text(' UNUSED: ' + m_decks[DECK_UNUSED_LOCS].cards.length, 0, 25); // m_cw/2);
+  stroke(0);
   rect(0, 0, m_ch, m_cw);
-  // stroke(255); fill(0); strokeWeight(1);
+  stroke(0);
+  setDeckNameColor(DECK_MAP_LOCS);
   text('   MAP: ' + m_decks[DECK_MAP_LOCS].cards.length, m_ch, 25); // m_cw/2);
-  // stroke(0); noFill(); strokeWeight(1);
+  stroke(0);
   rect(0, 0, m_ch, m_cw);
-  // stroke(255); fill(0); strokeWeight(1);
+  setDeckNameColor(DECK_CUR_LOCS);
   text('CURRENT: ' + m_decks[DECK_CUR_LOCS].cards.length, 2*m_ch, 25); // m_cw/2);
 
   // JMU this could possibly be put in a function can then called once per deck
@@ -1378,30 +1384,34 @@ function drawBoard() {
   stroke(0); noFill(); strokeWeight(1);
   rect(700*m_s, 25*m_s, m_cw, m_ch);
   m_decks[DECK_HORDE].show(700*m_s, 25*m_s, 0, 0);
-  stroke(0); fill(0); strokeWeight(1); textSize(16);
+  stroke(0); noFill(); strokeWeight(1); textSize(16);
   // text("HOARD "+m_decks[DECK_HORDE].cards.length, 700, m_ch/2)
+  setDeckNameColor(DECK_HORDE);
   text("HOARD: "+m_decks[DECK_HORDE].cards.length, 700*m_s, 20*m_s)
 
   // Monsters
   stroke(0); noFill(); strokeWeight(1);
   rect(700*m_s+m_cw, 25*m_s, m_cw, m_ch);
   m_decks[DECK_MONSTERS].show(700*m_s+m_cw, 25*m_s, 0, 0);
-  stroke(0); fill(0); strokeWeight(1); textSize(16);
+  stroke(0); noFill(); strokeWeight(1); textSize(16);
+  setDeckNameColor(DECK_MONSTERS);
   text("CREAT: "+m_decks[DECK_MONSTERS].cards.length, 700*m_s+m_cw, 20*m_s)
 
   // Unhallowed
   stroke(0); noFill(); strokeWeight(1);
   rect(700*m_s, m_ch + 50*m_s, m_cw, m_ch);
   m_decks[DECK_UNHALLOWED].show(700*m_s, m_ch + 50*m_s, 0, 0);
-  stroke(0); fill(0); strokeWeight(1); textSize(16);
+  stroke(0); noFill(); strokeWeight(1); textSize(16);
   // text("UNHALL " + m_decks[DECK_UNHALLOWED].cards.length, 700, 3*m_ch/2)
+  setDeckNameColor(DECK_UNHALLOWED);
   text("UNHALL: " + m_decks[DECK_UNHALLOWED].cards.length, 700*m_s, m_ch + 45*m_s)
 
   // Graveyard
   stroke(0); noFill(); strokeWeight(1);
   rect(700*m_s+m_cw, m_ch + 50*m_s, m_cw, m_ch);
   m_decks[DECK_GRAVEYARD].show(700*m_s+m_cw, m_ch + 50*m_s, 0, 0);
-  stroke(0); fill(0); strokeWeight(1); textSize(16);
+  stroke(0); noFill(); strokeWeight(1); textSize(16);
+  setDeckNameColor(DECK_GRAVEYARD);
   text("GRAVE: " +m_decks[DECK_GRAVEYARD].cards.length, 700*m_s+m_cw, m_ch + 45*m_s)
 
   // If all the cards in the graveyard are selected indicate this.  Tihs could be done much more
@@ -1437,7 +1447,7 @@ function drawBoard() {
     rect(0+i*m_cw, 450*m_s+m_ch, m_cw, m_ch);
   }
   stroke(0); fill(0); strokeWeight(1); textSize(16);
-  text("LINE: ", 0, 450*m_s+m_ch/2)
+  text(" LINE: ", 0, 450*m_s+m_ch/2)
   stroke(0); noFill(); strokeWeight(1);
   // rect(700+m_cw, m_ch, m_cw, m_ch);
   m_decks[DECK_LINE].show(0, 450*m_s, 1, 0, 8);
