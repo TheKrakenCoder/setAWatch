@@ -63,6 +63,7 @@ let m_buttonsDifficulty = [];
 let m_fireX = [342, 388, 429, 459, 469, 463, 436, 395, 345, 297, 252, 227, 219, 228, 256, 297];
 let m_fireY = [134, 146, 170, 212, 254, 303, 347, 377, 387, 382, 347, 308, 256, 211, 169, 143];
 let m_s = 1.0;
+let m_buttonYes, m_buttonNo;
 
     
 // Decks are separate collections of cards on the table during play.  Each Deck is associated with one Set and many decks can use
@@ -509,6 +510,23 @@ function setup() {
     });
   m_allButtons.push(new Button(buttonIncrementFirewood, fireX+75-m_bs/2, fireY-m_bs, m_bs, m_bs));
 
+  ////////////////////////////////////////////
+  // Are You Sure Buttons
+  m_buttonYes = createNormalButton("Yes", 700, 375, 75, 50);
+  m_buttonYes.mousePressed(function(){
+      removeSelectedCardFromGamePart2();
+      m_buttonYes.hide();
+      m_buttonNo.hide();
+    });
+  m_buttonNo  = createNormalButton("No", 809, 375, 75, 50);
+  m_buttonNo.mousePressed(function(){
+      m_buttonYes.hide();
+      m_buttonNo.hide();
+    });
+  m_allButtons.push(new Button(m_buttonYes, 700, 375, 75, 50));
+  m_allButtons.push(new Button(m_buttonNo, 809, 375, 75, 50));
+  m_buttonYes.hide();
+  m_buttonNo.hide();
 
   ///////////////////////////////////////////////
   // Test
@@ -1146,6 +1164,19 @@ function removeSelectedCardFromGame() {
     update();
     return;
   }
+
+  m_buttonYes.show();
+  m_buttonNo.show();
+}
+
+function removeSelectedCardFromGamePart2() {
+  let cards = findSelectedCards();
+  if (cards.length == 0) {
+    m_messageP.html('You must selected at least 1 card');
+    update();
+    return;
+  }
+
   for (let card of cards) {
     card.selected = false;
     let idx = m_decks[card.deckIndex].findIndexInDeck(card)
@@ -1157,6 +1188,8 @@ function removeSelectedCardFromGame() {
     cards2[0].y = height*2; 
     m_decks[DECK_REMOVED_FROM_GAME].addCard(cards2[0]);
   }
+  m_buttonYes.hide();
+  m_buttonNo.hide();
   update();
 }
 
